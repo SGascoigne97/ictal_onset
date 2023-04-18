@@ -43,31 +43,37 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     
     % Beeswarm plot across patients
     % We will be organising our beeswarm plots by outcome (good/bad) and by
-    % mean within these groups
+    % median within these groups
     if comparison == "resection"
         val_tbl = final_comp(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
             'Sorensen_norm', 'Percentage_resec','Hausdorff', 'Hausdorff_norm'});
-        pat_mean = grpstats(val_tbl, "Patient_id", "mean");
-        pat_mean = join(pat_mean, onset_output(:,[1 9]));
+        pat_median = grpstats(val_tbl, "Patient_id", "median");
+        pat_median = join(pat_median, onset_output(:,[1 9]));
     elseif comparison == "pairwise"
         val_tbl = final_comp(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
             'Sorensen_norm', 'Hausdorff', 'Hausdorff_norm'});
-        pat_mean = grpstats(val_tbl, "Patient_id", "mean");
-        pat_mean = join(pat_mean, onset_output(:,[1 9]));
+        pat_median = grpstats(val_tbl, "Patient_id", "median");
+        pat_median = join(pat_median, onset_output(:,[1 9]));
     end
     
     % Pull out column of comparison measure of interest
     column_index = find(string(final_comp.Properties.VariableNames)...
         == comp_measure);
     val_col = table2array(final_comp(:,column_index));
+
+    outcome = zeros(1,size(onset_output,1));
     
     % Organise patients into good and bad outcomes
-    good_mean = pat_mean(cell2mat(pat_mean.Surgery_outcome) == 1,:);
-    bad_mean = pat_mean(cell2mat(pat_mean.Surgery_outcome) == 0,:);
+    for pat = 1:size(onset_output,1)
+        outcome(pat) = pat_median.Surgery_outcome{pat,1}(1);
+    end
+    outcome(outcome == 8) = NaN;
+    good_mean = pat_median(outcome <= 2,:);
+    bad_mean = pat_median(outcome > 2,:);
     
     % Within groups, organise by mean 
-    [~, Ig] = sort(good_mean.(sprintf("mean_%s", comp_measure)), 'descend');
-    [~, Ib] = sort(bad_mean.(sprintf("mean_%s", comp_measure)), 'descend');
+    [~, Ig] = sort(good_mean.(sprintf("median_%s", comp_measure)), 'descend');
+    [~, Ib] = sort(bad_mean.(sprintf("median_%s", comp_measure)), 'descend');
       
     % Find indeces to organise by mean value
     ind = [Ig; (size(good_mean,1)+Ib)];
@@ -81,19 +87,29 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     end
     
     figure()
-    beeswarm(reorder_pat_label, val_col, 3,'sort_style','up','overlay_style','sd',...
-        'dot_size', 2, 'corral_style', 'gutter');
-    xlim([-1 16])
+    boxchart(reorder_pat_label, val_col, 'MarkerStyle','none')
+    hold on
+    swarmchart(reorder_pat_label, val_col,'filled', 'XJitterWidth',1)
+    hold off
+    xlim([-1 (length(outcome)+1)])
+    xticks(1:length(outcome))
+    xticklabels(patient_ids(ind))
+    xtickangle(45)
+    xlabel("Patient ID")
+
     if comp_measure == "Hausdorff_norm"
         ylim([0 1])
     elseif comp_measure == "Percentage_resec"
         ylim([0 1])
+    else
+        yline(0)
     end
     
     xline(size(good_mean,1)+0.5)
     title(sprintf('%s %s across patients (based on %s)', comparison, strrep(comp_measure,'_',' '), det_method))
     
     if save_plot == 1
+        mkdir(sprintf('%s%s', save_location, comparison))
         saveas(gcf,sprintf('%s%s/%s_all_pat_%s', save_location, comparison, comp_measure, det_method), 'png')
     end
 end

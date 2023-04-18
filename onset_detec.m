@@ -1,4 +1,4 @@
-data_location = '/media/b5007876/DATA/Data/UCLH_export/imprintDataExport/'; % replace
+data_location = '/media/b5007876/DATA/Data/UCLH_export/imprintDataExportFinal/'; % replace
 path_pipeline_exports = [data_location, 'export_ictal'];
 
 % Add paths to all functions required
@@ -12,9 +12,15 @@ patients_dir = dir(path_pipeline_exports);
 patients = {patients_dir(3:end).name};
 
 %% For each patient, compute onset based on imprint, EI, and PLHG
-for pat = 6:10%length(patients)
+for pat = 1:length(patients)
     patient = patients{pat};
-    load(sprintf('%s/%s.mat', data_location, patient));
+
+    if exist(sprintf('%s/%s.mat', data_location, patient), 'file')
+        load(sprintf('%s/%s.mat', data_location, patient));
+    else
+        fprintf('Patient %s does not have saved data \n', patient)
+        continue 
+    end
     pat_data = data_export;
     pat_meta = pat_data(:,1:(end-1));
 
@@ -32,6 +38,10 @@ for pat = 6:10%length(patients)
         continue
     end
     metadata = pat_data(:,1:(end-1));
+
+    % Remove seizures from json data that do not meeti inclusion criteria
+    json_data = json_data(contains(string(extractfield(cat(2,json_data.x_id),...
+        'x_oid')), string(pat_data.segment_id)));
     
     % Compute onsets
     mkdir('onset_calcs')
@@ -63,37 +73,5 @@ for pat = 6:10%length(patients)
     end
 end
 
-%% CODE UPDATED TO HERE
-
-%% TO DO
-% - rewrite code so it runs on one patient at a time then affs to output
-% table (as code now uses patient-specific json data
-
-
-% Plot onsets for each patient and save
-patients = onset_output.Patient_id;
-% for pat = 1%:length(patients)
-%     figure(pat)
-%     subplot(181)
-%     imagesc(onset_output.Labelled_onset{pat,1})
-%     title("CLO")
-%     subplot(1,8,2:3)
-%     imagesc(onset_output.imprint_roi{pat,1})
-%     title("IO")
-%     subplot(1,8,4:5)
-%     imagesc(onset_output.EI_roi{pat,1})
-%     title("EIO")
-%     subplot(1,8,6:7)
-%     imagesc(onset_output.PLHG_roi{pat,1})
-%     title("PLHGO")
-%     subplot(188)
-%     imagesc(onset_output.Resected{pat,1})
-%     title("Resected")
-%     sgtitle(sprintf("Patient %s (onset computed channel-wise)", patients(pat)))
-% %     mkdir(sprintf('figures/roi_second/%s', patients(pat)))
-% %     saveas(gcf,sprintf('figures/roi_second/%s/onset', patients(pat)), 'png')
-% end
-
-% Save output table 
-%save('onset_output.mat', 'onset_output');
-
+%%
+save('final_output',"final_output")

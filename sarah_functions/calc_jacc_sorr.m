@@ -104,8 +104,19 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
             comp_table.Percentage_resec(sz) = sum((sz_onset+resected_binary)==2)/sum(sz_onset);
 
             % Add in patient id
-            comp_table.Patient_id(sz) = pat_onset.Patient_id;
+            comp_table.Patient_id(sz) = pat_onset.Patient_id(1);
         
+        end
+
+        if max(comp_table.Jaccard_norm) == 10^(16)
+            comp_table = comp_table(comp_table.Jaccard_norm < 10^(16),:);
+%             % Compute maximum Jaccard (that is not 10^16)
+%             max_jacc = max(comp_table(comp_table.Jaccard_norm <10^(16),:).Jaccard_norm);
+%             corrected_jac = max_jacc/comp_table.Jaccard((comp_table.Jaccard_norm == max_jacc));
+%             comp_table.Jaccard_norm(comp_table.Jaccard_norm == 10^(16)) = corrected_jac;
+%             comp_table.Sorensen_norm(comp_table.Jaccard_norm == 10^(16)) = ...
+%                 (2*comp_table.Jaccard(comp_table.Jaccard_norm == 10^(16)))...
+%                 /(1+comp_table.Jaccard(comp_table.Jaccard_norm == 10^(16)));
         end
         % Reorder table to help with readability
         comp_table = comp_table(:,{'Patient_id', 'Seizure_id',... % 'N_onset_regions'

@@ -42,7 +42,7 @@ function [onset_output] = onset_chan_to_roi(data_tbl, json_data, onset_output, o
     unq_roi = onset_output.ROI_ids{1,1};
 
     channel_details = json_data(1).channel_details;
-    recorded_channels = channel_details(contains(strrep(channel_details.chan_name, ' ', ''),...
+    recorded_channels = channel_details(ismember(strrep(channel_details.chan_name, ' ', ''),...
         strrep(data_tbl.segment_channel_labels{1},' ', '')),:);
     recorded_roi_all_atlas = cat(2,recorded_channels.ROIname{:});
     incl_roi = recorded_roi_all_atlas(3,:)';

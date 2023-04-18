@@ -59,22 +59,31 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
             {'Hausdorff'});
 
         % Obtain xyz coordinated for resected regions
-        resec_binary = contains(string(atlas_scale.name{1,1}), unq_roi(find(resected_binary)));
+        resec_binary = ismember(strrep(string(atlas_scale.name{1,1}),' ',''),...
+            strrep(unq_roi(find(resected_binary)), ' ',''));
         resec_xyz = xyz(resec_binary,:);
 
-        % Iterate through seizures and comput Hausdorff's distance
+        % Iterate through seizures and compute Hausdorff's distance
         for sz = 1:sz_count
+            % Add in patient ID
+            comp_table.Patient_id(sz) = pat_onset.Patient_id;
+            % Add in seizure ID
             comp_table.Seizure_id(sz) = seizure_ids(sz);
             % Compute Hausdorff distance between onset regions and resection
-            onset_roi_binary = contains(string(atlas_scale.name{1,1}), unq_roi(find(onset_binary(:,sz))));
+            onset_roi_binary = ismember(strrep(string(atlas_scale.name{1,1}),' ',''),...
+                strrep(unq_roi(find(onset_binary(:,sz))),' ',''));
+            if sum(onset_roi_binary)==0
+                comp_table.Hausdorff(sz) = NaN;
+                comp_table.Hausdorff_norm(sz) = NaN;
+                continue
+            end
             onset_xyz = xyz(onset_roi_binary,:);
             [hd,~] = HausdorffDist(resec_xyz, onset_xyz);
             comp_table.Hausdorff(sz) = hd;
             % Scale Hausdorff's distance to between zero and one by dividing by the
             % maximum distance between two ROIs in the atlas
             comp_table.Hausdorff_norm(sz) = hd/max(max(atlas_scale.dists{1,1}));
-            % Add in patient ID
-            comp_table.Patient_id(sz) = pat_onset.Patient_id;
+            
         end
 
 
