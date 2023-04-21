@@ -7,12 +7,34 @@
 comparison = "resection";
 det_method = "CLO";
 load(sprintf('tables/across_pat_%s_%s.mat', det_method, comparison));
-comp_table = final_comp; % check this 
-comp_table.Surgery_outcome = cell2mat(comp_table.Surgery_outcome); % need to change this line
+clo_comp = final_comp;
 
-% Check distributions for both outcome groups (should we use a T-test or 
+fun = @(x) x(1);
+clo_comp.Outcome_1 = cellfun(fun, clo_comp.Surgery_outcome);
+clo_comp.Outcome_1(clo_comp.Outcome_1 == 8) = NaN;
+
+%% Check distributions for both outcome groups (should we use a T-test or 
 % Wilcoxon-rank?)
+figure()
+tiledlayout(3,1)
+nexttile
+histogram(clo_comp.Percentage_resec, 'BinWidth', 0.1)
+xlim([-.05,1.05])
+nexttile
+histogram(clo_comp.Percentage_resec(clo_comp.Outcome_1 <3), 'BinWidth', 0.1)
+title('ILAE 1-2')
+xlim([-.05,1.05])
+nexttile
+histogram(clo_comp.Percentage_resec(clo_comp.Outcome_1 >2), 'BinWidth', 0.1)
+title('ILAE 3+')
+xlim([-.05,1.05])
+
 % Perform relevant test and obtain test statistic and p-value
+    % Data is not normally distributed - therefore we will use
+    % Wilcoxon-Rank
+[p,h, stats] = ranksum(clo_comp.Percentage_resec(clo_comp.Outcome_1 <3),...
+    clo_comp.Percentage_resec(clo_comp.Outcome_1 >2), 'tail','left',...
+    'method','exact')
 
 % Is the proportion of regions resected larger for ILAE 1-2 and/or smaller 
 % for ILAE 3+?

@@ -21,26 +21,28 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
         atlas_scale 
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["CLO", "imprint", "EI", "PLHG"])} = "imprint" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection" 
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi" 
     end
     
     %fill in optional arguments
     det_method = opts.det_method;
     comparison = opts.comparison;
+    chan_or_roi = opts.chan_or_roi;
 
     % Pull in xyz coordinates from Atlas
     xyz = atlas_scale.xyz{1,1};
 
     % Pull out the unique ROIs recorded for this patient
-    unq_roi = pat_onset.ROI_ids{1,1};
+    unq_roi = pat_onset.ROI_ids{1,1}; % Need to find out if I can get distances between channels (across grey matter) 
 
     if det_method == "CLO"
           % Extract the automatically detected onsets matrix
-        onset_binary = cell2mat(pat_onset.Labelled_onset);
+        onset_binary = cell2mat(pat_onset.labelled_onset_roi);
         seizure_ids = "CLO";
         sz_count = 1;
     else
         % Extract the automatically detected onsets matrix
-        onset_binary = cell2mat(pat_onset.(sprintf('%s_roi',det_method)));
+        onset_binary = cell2mat(pat_onset.(sprintf('%s_%s',det_method, chan_or_roi)));
         % Extract seizure IDs
         seizure_ids = string(pat_onset.Segment_ids{1,1});
         
@@ -54,7 +56,7 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
 
     if comparison == "resection"
         % Extract resected region for this patient
-        resected_binary = cell2mat(pat_onset.Resected);
+        resected_binary = cell2mat(pat_onset.(sprintf('resected_%s', chan_or_roi)));
         comp_table = array2table(zeros(sz_count,1), 'VariableNames', ...
             {'Hausdorff'});
 

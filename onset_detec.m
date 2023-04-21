@@ -39,7 +39,7 @@ for pat = 1:length(patients)
     end
     metadata = pat_data(:,1:(end-1));
 
-    % Remove seizures from json data that do not meeti inclusion criteria
+    % Remove seizures from json data that do not meet inclusion criteria
     json_data = json_data(contains(string(extractfield(cat(2,json_data.x_id),...
         'x_oid')), string(pat_data.segment_id)));
     

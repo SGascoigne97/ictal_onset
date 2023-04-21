@@ -28,6 +28,7 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
         onset_output
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["imprint", "EI", "PLHG"])} = "imprint" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection"
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi"
         opts.comp_measure (1,1) string {mustBeMember(opts.comp_measure,...
             ["Jaccard","Jaccard_norm", "Sorensen", "Sorensen_norm", "Percentage_resec", "Hausdorff", "Hausdorff_norm"])} = "Jaccard_norm" 
         opts.save_plot (1,1) double = 0
@@ -37,6 +38,7 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     %fill in optional arguments
     det_method = opts.det_method;
     comparison = opts.comparison; 
+    chan_or_roi = opts.chan_or_roi;
     comp_measure = opts.comp_measure;
     save_plot = opts.save_plot;
     save_location = opts.save_location;
@@ -44,17 +46,22 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     % Beeswarm plot across patients
     % We will be organising our beeswarm plots by outcome (good/bad) and by
     % median within these groups
-    if comparison == "resection"
-        val_tbl = final_comp(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
-            'Sorensen_norm', 'Percentage_resec','Hausdorff', 'Hausdorff_norm'});
-        pat_median = grpstats(val_tbl, "Patient_id", "median");
-        pat_median = join(pat_median, onset_output(:,[1 9]));
-    elseif comparison == "pairwise"
-        val_tbl = final_comp(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
-            'Sorensen_norm', 'Hausdorff', 'Hausdorff_norm'});
-        pat_median = grpstats(val_tbl, "Patient_id", "median");
-        pat_median = join(pat_median, onset_output(:,[1 9]));
-    end
+    val_tbl = final_comp(:,ismember(final_comp.Properties.VariableNames,...
+        {'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
+        'Sorensen_norm', 'Percentage_resec','Hausdorff', 'Hausdorff_norm', 'Y1_outcome'}));
+    pat_median = grpstats(val_tbl, "Patient_id", "median");
+
+%     if comparison == "resection"
+%         val_tbl = final_comp; %(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
+%             %'Sorensen_norm', 'Percentage_resec','Hausdorff', 'Hausdorff_norm'});
+%         pat_median = grpstats(val_tbl, "Patient_id", "median");
+%         pat_median = join(pat_median, onset_output(:,[1 9]));
+%     elseif comparison == "pairwise"
+%         val_tbl = final_comp;%(:,{'Patient_id', 'Jaccard', 'Jaccard_norm', 'Sorensen',...
+%             %'Sorensen_norm', 'Hausdorff', 'Hausdorff_norm'});
+%         pat_median = grpstats(val_tbl, "Patient_id", "median");
+%         pat_median = join(pat_median, onset_output(:,[1 9]));
+%     end
     
     % Pull out column of comparison measure of interest
     column_index = find(string(final_comp.Properties.VariableNames)...
@@ -65,9 +72,8 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     
     % Organise patients into good and bad outcomes
     for pat = 1:size(onset_output,1)
-        outcome(pat) = pat_median.Surgery_outcome{pat,1}(1);
+        outcome(pat) = pat_median.median_Y1_outcome(pat);
     end
-    outcome(outcome == 8) = NaN;
     good_mean = pat_median(outcome <= 2,:);
     bad_mean = pat_median(outcome > 2,:);
     
@@ -109,7 +115,7 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     title(sprintf('%s %s across patients (based on %s)', comparison, strrep(comp_measure,'_',' '), det_method))
     
     if save_plot == 1
-        mkdir(sprintf('%s%s', save_location, comparison))
-        saveas(gcf,sprintf('%s%s/%s_all_pat_%s', save_location, comparison, comp_measure, det_method), 'png')
+        mkdir(sprintf('%s%s_%s', save_location, comparison, chan_or_roi))
+        saveas(gcf,sprintf('%s%s_%s/%s_all_pat_%s', save_location, comparison, chan_or_roi, comp_measure, det_method), 'png')
     end
 end

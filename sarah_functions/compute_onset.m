@@ -27,10 +27,11 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
     % lambda and v in EI)
     
     % Create table to store output
-    colNames = {'Patient_id', 'Segment_ids', 'ROI_ids','Labelled_onset',...
-        'Imprint_onset','EI_onset', 'PLHG_onset','Resected', 'Surgery_outcome',...
-        'Surgery_year', 'Outcome_year', 'Op_type'};
-    onset_output = cell(size(sz_count_pat,1), 12);
+    colNames = {'Patient_id', 'Segment_ids', 'channel_names', 'ROI_ids',...
+        'labelled_onset_chan', 'imprint_chan','EI_chan', 'PLHG_chan',...
+        'resected_chan', 'labelled_onset_roi','resected_roi', ...
+        'Surgery_outcome', 'Surgery_year', 'Outcome_year', 'Op_type'};
+    onset_output = cell(size(sz_count_pat,1), 15);
     onset_output = cell2table(onset_output, 'VariableNames', colNames);
     % Populate patient Ids
     onset_output.Patient_id = string(sz_count_pat(:,1));
@@ -55,7 +56,7 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         tbl_plhg = table();
         
         channel_details = json_data(1).channel_details;
-        recorded_channels = channel_details(contains(strrep(channel_details.chan_name, ' ', ''),...
+        recorded_channels = channel_details(ismember(strrep(channel_details.chan_name, ' ', ''),...
             strrep(data_tbl.segment_channel_labels{1},' ', '')),:);
 
         recorded_roi_all_atlas = cat(2,recorded_channels.ROIname{:});
@@ -113,12 +114,15 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         % Store segment ids in output table (for future reference)
         onset_output(pat,:).Segment_ids = mat2cell(pat_data.segment_id',1,size(pat_data,1));
         % Store onset results in output table
+        onset_output(pat,:).channel_names = {recorded_channels.chan_name};
         onset_output(pat,:).ROI_ids = mat2cell(unq_roi,length(unq_roi),1);
-        onset_output(pat,:).Labelled_onset = mat2cell(soz_roi, length(unq_roi), 1);
-        onset_output(pat,:).Imprint_onset = mat2cell(onset_imprint,n_chan,sz_count);
-        onset_output(pat,:).EI_onset = mat2cell(onset_ei,n_chan,sz_count);
-        onset_output(pat,:).PLHG_onset = mat2cell(onset_plhg,n_chan,sz_count);
-        onset_output(pat,:).Resected = mat2cell(resected_roi,length(unq_roi),1);
+        onset_output(pat,:).labelled_onset_chan = {recorded_channels.is_soz};
+        onset_output(pat,:).imprint_chan = mat2cell(onset_imprint,n_chan,sz_count);
+        onset_output(pat,:).EI_chan = mat2cell(onset_ei,n_chan,sz_count);
+        onset_output(pat,:).PLHG_chan = mat2cell(onset_plhg,n_chan,sz_count);
+        onset_output(pat,:).resected_chan = {recorded_channels.is_resected5};
+        onset_output(pat,:).labelled_onset_roi = mat2cell(soz_roi, length(unq_roi), 1);
+        onset_output(pat,:).resected_roi = mat2cell(resected_roi,length(unq_roi),1);
         onset_output(pat,:).Surgery_outcome = pat_data.ilae(1);
         surgery_date = getfield(json_data(1).treatment_details.treatment_date, 'x_date');
         onset_output(pat,:).Surgery_year = cellstr(string(surgery_date(1:4)));

@@ -27,11 +27,11 @@ function [onset_output] = onset_chan_to_roi(data_tbl, json_data, onset_output, o
     method = opts.method;
 
     if method == "imprint"
-        onset = onset_output.Imprint_onset;
+        onset = onset_output.imprint_chan;
     elseif method == "EI"
-        onset = onset_output.EI_onset;
+        onset = onset_output.EI_chan;
     elseif method == "PLHG"
-        onset = onset_output.PLHG_onset;
+        onset = onset_output.PLHG_chan;
     end
   
     % Add empty column to store output

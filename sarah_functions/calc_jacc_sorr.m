@@ -27,6 +27,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
     arguments
         pat_onset % onset_output table for one specific patient 
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["CLO", "imprint", "EI", "PLHG"])} = "imprint" 
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection" 
         opts.n_perm (1,1) double = 100 
         opts.tau (1,1) double = 10^-16 
@@ -34,6 +35,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
     
     %fill in optional arguments
     det_method = opts.det_method;
+    chan_or_roi = opts.chan_or_roi;
     comparison = opts.comparison;
     n_perm = opts.n_perm;
     tau = opts.tau;
@@ -46,11 +48,18 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
 
     if det_method == "CLO"
         % Extract the clinically labelled onset array
-        onset_binary = cell2mat(pat_onset.Labelled_onset);
+        onset_binary = cell2mat(pat_onset.(sprintf('labelled_onset_%s',chan_or_roi)));
+        % skip patient if missing CLO data
+        if min(isnan(onset_binary)) == 1
+            fprintf("Patient %s does not have CLO data \n", pat_onset.Patient_id)
+            comp_table = array2table(nan(0,3), 'VariableNames',...
+            {'N_onset_regions', 'Jaccard', 'Sorensen'});
+            return
+        end
         sz_count = size(onset_binary,2);
     else
         % Extract the automatically detected onsets matrix
-        onset_binary = cell2mat(pat_onset.(sprintf('%s_roi',det_method)));
+        onset_binary = cell2mat(pat_onset.(sprintf('%s_%s',det_method,chan_or_roi)));
         % Extract seizure IDs
         seizure_ids = string(pat_onset.Segment_ids{1,1});
         
@@ -63,7 +72,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
 
     if comparison == "resection"
         % Extract resected region for this patient
-        resected_binary = cell2mat(pat_onset.Resected);
+        resected_binary = cell2mat(pat_onset.(sprintf('resected_%s',chan_or_roi)));
         comp_table = array2table(nan(sz_count,3), 'VariableNames',...
             {'N_onset_regions', 'Jaccard', 'Sorensen'});
         % Iterate through seizures and compute Jaccard's index, then
@@ -78,7 +87,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
             end
             
             comp_table.N_onset_regions(sz) = sum(sz_onset);
-            comp_table.Jaccard(sz) = jaccard(sz_onset,resected_binary);
+            comp_table.Jaccard(sz) = jaccard(double(sz_onset),resected_binary);
             comp_table.Sorensen(sz) = (2*comp_table.Jaccard(sz))/(1+comp_table.Jaccard(sz));
             perm_jac = zeros(1, n_perm);
             perm_sor = zeros(1, n_perm);
