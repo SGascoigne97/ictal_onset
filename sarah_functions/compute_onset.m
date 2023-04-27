@@ -98,19 +98,25 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         
             % Onset based on Phase-locked high-gamma
             [tbl_plhg(sz,:)] = ms_PLHG(pat_data(sz,:));
-            [~,plhg_id] = mink(tbl_plhg(sz,:).when_plhg,4);
-            onset_plhg(plhg_id,sz) = 1;
-             
+%             [~,plhg_id] = mink(tbl_plhg(sz,:).when_plhg,4);
+%             onset_plhg(plhg_id,sz) = 1;
+            when_plhg = tbl_plhg(sz,:).when_plhg;
+            when_plhg_na_omit = when_plhg(~isnan(when_plhg));
+            % Onset within 0.5 of earliest PLHG included in seizure onset
+            earliest = min(when_plhg_na_omit);
+            latest = earliest + 0.5;
+            onset_plhg(:,sz) = when_plhg >= earliest & when_plhg<=latest;
+ 
         end
-       
-        soz_roi = zeros(length(unq_roi),1);
-        resected_roi = zeros(length(unq_roi),1);
+
+        soz_roi = chan_to_roi_crit(recorded_channels.is_soz, incl_roi, unq_roi);
+        resected_roi = chan_to_roi_crit(recorded_channels.is_resected5, incl_roi, unq_roi);
         
-        for grp = 1:length(unq_roi)
-            soz_roi(grp) = sum(recorded_channels.is_soz(string(incl_roi) == string(unq_roi(grp))))>0;
-            resected_roi(grp) = sum(recorded_channels.is_resected5(string(incl_roi) == string(unq_roi(grp))))>0;
-        end
-        
+%         for grp = 1:length(unq_roi)
+%             soz_roi(grp) = sum(recorded_channels.is_soz(string(incl_roi) == string(unq_roi(grp))))>0;
+%             resected_roi(grp) = sum(recorded_channels.is_resected5(string(incl_roi) == string(unq_roi(grp))))>0;
+%         end
+%         
         % Store segment ids in output table (for future reference)
         onset_output(pat,:).Segment_ids = mat2cell(pat_data.segment_id',1,size(pat_data,1));
         % Store onset results in output table
@@ -121,8 +127,8 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         onset_output(pat,:).EI_chan = mat2cell(onset_ei,n_chan,sz_count);
         onset_output(pat,:).PLHG_chan = mat2cell(onset_plhg,n_chan,sz_count);
         onset_output(pat,:).resected_chan = {recorded_channels.is_resected5};
-        onset_output(pat,:).labelled_onset_roi = mat2cell(soz_roi, length(unq_roi), 1);
-        onset_output(pat,:).resected_roi = mat2cell(resected_roi,length(unq_roi),1);
+        onset_output(pat,:).labelled_onset_roi = mat2cell(soz_roi', length(unq_roi), 1);
+        onset_output(pat,:).resected_roi = mat2cell(resected_roi',length(unq_roi),1);
         onset_output(pat,:).Surgery_outcome = pat_data.ilae(1);
         surgery_date = getfield(json_data(1).treatment_details.treatment_date, 'x_date');
         onset_output(pat,:).Surgery_year = cellstr(string(surgery_date(1:4)));

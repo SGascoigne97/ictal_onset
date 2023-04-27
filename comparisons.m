@@ -31,10 +31,10 @@ final_output = final_output(ind,:);
 
 save_table = 1;
 save_plot = 1;
-chan_or_roi = "chan"; % I need to add Hausdorff to channel-level comparisons
+chan_or_roi = "roi"; % I need to add Hausdorff to channel-level comparisons
 
-for comparison = "pairwise" %["resection", "pairwise"]
-    for det_method = ["EI", "PLHG"] %["CLO", "imprint", "EI", "PLHG"] %
+for comparison = "resection" %, "pairwise"]
+    for det_method = "imprint" %[ "CLO", "imprint", "EI", "PLHG"] %
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
@@ -53,12 +53,12 @@ for comparison = "pairwise" %["resection", "pairwise"]
                 if height(jac_sor_table) == 0
                     continue
                 end
+                pat_comp = jac_sor_table;
                 if chan_or_roi == "roi"
                     haus_table = calc_haus(pat_onset, atlas(3,:), "det_method", det_method, "comparison", comparison);
                     pat_comp = join(jac_sor_table, haus_table);
                 end
-                pat_comp = jac_sor_table;
-
+                
                 if comparison == "resection"  & det_method == "CLO"
                     onset_resec = pat_onset.labelled_onset_chan{:} + pat_onset.resected_chan{:} == 2;
                     perc_chan_resec = sum(onset_resec)/sum(pat_onset.labelled_onset_chan{:});
@@ -121,15 +121,15 @@ for comparison = "pairwise" %["resection", "pairwise"]
     end
 end
 
-%% Compare values using channels and regions (percentage resected)
-fun = @(x) x(1);
-final_output.Outcome_1 = cellfun(fun, final_output.Surgery_outcome);
-final_output.Outcome_1(final_output.Outcome_1 == 8) = NaN;
-
-figure()
-scatter3(final_comp.Percentage_resec*100, final_comp.perc_chan_resec*100, final_output.Outcome_1>2)
-lsline
-xlabel('Region-wise')
-ylabel('Channel-wise')
-title('Plot of percentage resected using channels and regions')
-%legend({'good','bad','good','bad'})
+% %% Compare values using channels and regions (percentage resected)
+% fun = @(x) x(1);
+% final_output.Outcome_1 = cellfun(fun, final_output.Surgery_outcome);
+% final_output.Outcome_1(final_output.Outcome_1 == 8) = NaN;
+% 
+% figure()
+% scatter3(final_comp.Percentage_resec*100, final_comp.perc_chan_resec*100, final_output.Outcome_1>2)
+% lsline
+% xlabel('Region-wise')
+% ylabel('Channel-wise')
+% title('Plot of percentage resected using channels and regions')
+% %legend({'good','bad','good','bad'})

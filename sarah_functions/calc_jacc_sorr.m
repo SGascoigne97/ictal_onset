@@ -65,36 +65,56 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
         
         % Remove seizures with no onset detected
         % This should have been done earlier, double check code!
-        onset_binary = onset_binary(:,sum(onset_binary) > 0);
-        seizure_ids = seizure_ids(sum(onset_binary) > 0);
-        sz_count = size(onset_binary,2);
+%         onset_binary = onset_binary(:,sum(onset_binary) > 0);
+%         seizure_ids = seizure_ids(sum(onset_binary) > 0);
+         sz_count = size(onset_binary,2);
     end
 
     if comparison == "resection"
         % Extract resected region for this patient
         resected_binary = cell2mat(pat_onset.(sprintf('resected_%s',chan_or_roi)));
+        nan_resec = isnan(resected_binary); % Compute outside loop as regions will be removed leading to error
         comp_table = array2table(nan(sz_count,3), 'VariableNames',...
             {'N_onset_regions', 'Jaccard', 'Sorensen'});
         % Iterate through seizures and compute Jaccard's index, then
         % normalise based on 'chance' distribution
         for sz = 1:sz_count
             sz_onset = onset_binary(:,sz);
-
             if det_method == "CLO"
                 comp_table.Seizure_id(sz) = "CLO";
             else
                 comp_table.Seizure_id(sz) = seizure_ids(sz);
             end
             
+            % If any regions are ignored, remove them from analysis now 
+            loc_nan = isnan(sz_onset)+nan_resec >0;
+            sz_onset = sz_onset(~loc_nan);
+            resected_binary_rm_nan = resected_binary(~loc_nan);
+
+            % Add the number of onset regions to the output table 
             comp_table.N_onset_regions(sz) = sum(sz_onset);
-            comp_table.Jaccard(sz) = jaccard(double(sz_onset),resected_binary);
+
+              % Add in patient id
+            comp_table.Patient_id(sz) = pat_onset.Patient_id(1);
+
+             %If a seizure does not have a detected onset, skip seizure
+            if sum(sz_onset, 'omitnan') == 0
+                comp_table.Jaccard(sz) = NaN;
+                comp_table.Jaccard_norm(sz) = NaN;
+                comp_table.Sorensen(sz) = NaN;
+                comp_table.Sorensen_norm(sz) = NaN;
+                comp_table.Percentage_resec(sz) = NaN;
+                continue
+            end
+
+            comp_table.Jaccard(sz) = jaccard(sz_onset,resected_binary_rm_nan);
             comp_table.Sorensen(sz) = (2*comp_table.Jaccard(sz))/(1+comp_table.Jaccard(sz));
             perm_jac = zeros(1, n_perm);
             perm_sor = zeros(1, n_perm);
             
             for perm = 1:n_perm
                 rng(perm)
-                seizure_table = array2table([resected_binary sz_onset], 'VariableNames', {'Resected', 'Onset'});
+                seizure_table = array2table([resected_binary_rm_nan sz_onset], 'VariableNames', {'Resected', 'Onset'});
                 seizure_shuffled = seizure_table;
                 % Shuffle both onset and resected matrices 
                 seizure_shuffled.Resected = seizure_shuffled.Resected(randperm(size(seizure_shuffled,1)));
@@ -110,10 +130,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
             comp_table.Sorensen_norm(sz) = (comp_table.Sorensen(sz) - mean(perm_sor))/(std(perm_sor)+tau);
 
             % Compute the percentage of onset regions resected
-            comp_table.Percentage_resec(sz) = sum((sz_onset+resected_binary)==2)/sum(sz_onset);
-
-            % Add in patient id
-            comp_table.Patient_id(sz) = pat_onset.Patient_id(1);
+            comp_table.Percentage_resec(sz) = sum(sz_onset+resected_binary_rm_nan==2)/sum(sz_onset);
         
         end
 
@@ -152,6 +169,11 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
                         perm_sor = zeros(1, n_perm);
                         sz_onset1 = onset_binary(:,sz1);
                         sz_onset2 = onset_binary(:,sz2);
+                        % Remove any ignored regions
+                        na_rm = isnan(sz_onset1) + isnan(sz_onset2);
+
+                        sz_onset1 = sz_onset1(~na_rm);
+                        sz_onset2 = sz_onset2(~na_rm);
         
                         if sum(sz_onset1) ~= 0 && sum(sz_onset2) ~= 0
                             comp_table.Seizure1_id(count) = seizure_ids(sz1);
