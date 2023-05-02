@@ -78,11 +78,12 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
 %         pre_features(pre_outl)=NaN;
         feat_pre_m=median(pre_features,2,'omitnan');
         feat_pre_smad=mc*mad_rewrite(pre_features,1,2);
-        mad_score_features = (features-feat_pre_m)./feat_pre_smad;%score ictal to median & scaled mad
+        mad_score_features = (features-feat_pre_m)./feat_pre_smad; %score ictal to median & scaled mad
         
         % Pull out ictal segment
         ict_features= features(:,ictal_ids,:);
-        ict_features_mad = mad_score_features(:,ictal_ids,:);
+%         ict_features_mad = abs(mad_score_features(:,ictal_ids,:));
+        ict_features_mad = (mad_score_features(:,ictal_ids,:));
         
         
         %------------------------------------------------------------------
