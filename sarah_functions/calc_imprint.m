@@ -7,6 +7,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
 %   - optional inputs
 %       - window_size: window size for which imprint will be computed
 %       - min_sz_count: minimum number of seizures to have been recorded per patient
+%       - folder: folder to store markers in
 
 % output
 %   - data_tbl: full data table (seizures with no imprint have been
@@ -21,6 +22,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
         metadata_tbl
         opts.window_size (1,1) double {mustBeNumeric} = 1; % Decide window size (in seconds) for which markers and imprint are compute
         opts.min_sz_count (1,1) double {mustBeNumeric} = 5; % Same criteria as earlier but some patients will have fewer seizures following seizures with nio activity in imprint
+        opts.folder = 'onset_calcs'; % folder to store markers in
     end
     
     %fill in optional arguments
@@ -29,7 +31,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
-    basefolder = sprintf('onset_calcs/%s', patient);
+    basefolder = sprintf([opts.folder, '/%s'], patient);
     sampling_rate=data_tbl.segment_fs(1) ;%just using the first, as all sampling was the same in our data after preproc.
     
     linelength_db = LL_db([basefolder '/LL_db/']); %setup folder for all Line Length measures
