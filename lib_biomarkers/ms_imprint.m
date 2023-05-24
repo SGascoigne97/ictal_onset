@@ -82,8 +82,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         
         % Pull out ictal segment
         ict_features= features(:,ictal_ids,:);
-%         ict_features_mad = abs(mad_score_features(:,ictal_ids,:));
-        ict_features_mad = (mad_score_features(:,ictal_ids,:));
+        ict_features_mad = abs(mad_score_features(:,ictal_ids,:));
+%         ict_features_mad = (mad_score_features(:,ictal_ids,:));
         
         
         %------------------------------------------------------------------

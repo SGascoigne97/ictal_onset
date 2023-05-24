@@ -31,6 +31,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection" 
         opts.n_perm (1,1) double = 100 
         opts.tau (1,1) double = 10^-16 
+       
     end
     
     %fill in optional arguments

@@ -22,19 +22,24 @@ addpath(genpath('help_functions/'))
 
 %%
 
-load("final_output.mat");
+load("final_output_min_5.mat");
+%%
 
 % Ensure there are no duplicate patients
 patients = final_output.Patient_id;
 [~, ind] = unique(patients);
 final_output = final_output(ind,:);
 
-save_table = 1;
-save_plot = 1;
+save_table = 0;
+save_plot = 0;
 chan_or_roi = "roi"; % I need to add Hausdorff to channel-level comparisons
+atl_id =  [36; 60; 125; 250];
+col_id = [1;2;3;4];
+atl_tab = table(atl_id, col_id);
+
 
 for comparison = "resection" %, "pairwise"]
-    for det_method = "imprint" %[ "CLO", "imprint", "EI", "PLHG"] %
+    for det_method = "imprint" % ["imprint", "EI", "PLHG"] %
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
@@ -55,7 +60,8 @@ for comparison = "resection" %, "pairwise"]
                 end
                 pat_comp = jac_sor_table;
                 if chan_or_roi == "roi"
-                    haus_table = calc_haus(pat_onset, atlas(3,:), "det_method", det_method, "comparison", comparison);
+                    haus_table = calc_haus(pat_onset, ...
+                        atlas(table2array(atl_tab(atl_tab.atl_id == atl,"col_id")),:), "det_method", det_method, "comparison", comparison);
                     pat_comp = join(jac_sor_table, haus_table);
                 end
                 
@@ -90,7 +96,7 @@ for comparison = "resection" %, "pairwise"]
             if save_table == 1
                 save(sprintf('tables/across_pat_%s_%s.mat', det_method, comparison), 'final_comp')
                 % Also save as a CSV to open in R
-                writetable(final_comp, sprintf('tables/across_pat_%s_%s_%s.csv', det_method, comparison, chan_or_roi))
+                writetable(final_comp, 'tables/min_5.csv')
             end
            
             % Beeswarm plot across patients

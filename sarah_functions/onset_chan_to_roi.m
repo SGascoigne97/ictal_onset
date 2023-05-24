@@ -21,13 +21,15 @@ function [onset_output] = onset_chan_to_roi(pat_onset, json_data, onset_output, 
         json_data
         onset_output
         opts.method (1,1) string {mustBeMember(opts.method, ["imprint", "EI", "PLHG"])} = "imprint" % state method of automatic onset detection
-        opts.thresh (1,1) double {mustBeInRange(opts.thresh, 0, 1)} = 0.25 % define as value within 0 and 1 (i.e. 0.25 = 25% of channels)
+        opts.thresh (1,1) double = nan % define as value within 0 and 1 (i.e. 0.25 = 25% of channels) or NaN if only one channel is required
+        opts.atlas (1,1) double {mustBeMember(opts.atlas, [36, 60, 125, 250])} = 60
 
     end
     
     %fill in optional arguments
     method = opts.method;
     thresh = opts.thresh;
+    atlas = opts.atlas;
 
     if method == "imprint"
         onset = onset_output.imprint_chan{:};
@@ -37,24 +39,45 @@ function [onset_output] = onset_chan_to_roi(pat_onset, json_data, onset_output, 
         onset = onset_output.PLHG_chan{:};
     end
   
-    % Add empty column to store output
-    onset_output = [onset_output cell(size(onset_output,1),1)];
-    onset_output.Properties.VariableNames(size(onset_output,2)) = sprintf("%s_roi", method);
+    % Add empty columns to store output
+    onset_output = [onset_output cell(size(onset_output,1),1) cell(size(onset_output,1),1)];
+    onset_output.Properties.VariableNames([-1,0]+size(onset_output,2)) = [sprintf("%s_roi", method), sprintf("%s_roi_names", method)];
     %%
     channel_details = json_data(1).channel_details;
     recorded_channels = channel_details(...
         ismember(strrep(channel_details.chan_name,' ', ''),...
         strrep(onset_output.channel_names{:},' ','')),:);
     recorded_roi_all_atlas = cat(2,recorded_channels.ROIname{:});
-    incl_roi = recorded_roi_all_atlas(3,:)';
-    unq_roi = unique(incl_roi);
 
+     atl_id =  [36; 60; 125; 250];
+     col_id = [1;2;3;4];
+     atl_tab = table(atl_id, col_id);
+     % Find the row to pull atlas ID from    
+     atl_row = table2array(atl_tab(atl_tab.atl_id == atlas,"col_id"));
+     
+     % Extract the name of included regions
+     incl_roi = recorded_roi_all_atlas(atl_row,:)';
+%     if atlas == "36"
+%         incl_roi = recorded_roi_all_atlas(1,:)';
+%     elseif atlas == "60"
+%         incl_roi = recorded_roi_all_atlas(2,:)';
+%     elseif atlas == "125"
+%         incl_roi = recorded_roi_all_atlas(3,:)';
+%     elseif atlas == "250"
+%         incl_roi = recorded_roi_all_atlas(4,:)';
+%     end
+    unq_roi = unique(incl_roi, 'stable');
+    
     onset_roi = zeros(length(unq_roi), size(pat_onset,1));
+    nam_mat = strings(length(unq_roi), size(pat_onset,1));
     for sz = 1:size(onset,2)
-        onset_roi(:,sz) = chan_to_roi_crit(onset(:,sz), incl_roi, unq_roi, "threshold", thresh);
+        [onset_roi(:,sz), names] = chan_to_roi_crit(onset(:,sz), incl_roi, unq_roi, "threshold", thresh);
+        nam_mat(1:length(names),sz) = names;
+
     end
 
-    onset_output(:,size(onset_output,2)) =  mat2cell(onset_roi,size(onset_roi,1),size(onset_roi,2));
+    onset_output(:,size(onset_output,2)-1) =  mat2cell(onset_roi,size(onset_roi,1),size(onset_roi,2));
+    onset_output(:,size(onset_output,2)) =  mat2cell(nam_mat,size(onset_roi,1),size(onset_roi,2));
 
 %     recorded_channels = channel_details(ismember(strrep(channel_details.chan_name, ' ', ''),...
 %         strrep(pat_onset.segment_channel_labels{1},' ', '')),:);

@@ -1,4 +1,4 @@
-function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_count_pat)
+function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_count_pat, opts)
 % Relabel patients to match Seizure Severity paper (Gascoigne et al., 2023)
 
 % At the moment, the code only works for one or two seizure type(s) at a 
@@ -19,7 +19,20 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         json_data
         cell_imprint 
         sz_count_pat
+        opts.atlas (1,1) double {mustBeMember(opts.atlas, [36, 60, 125, 250])} = 60
+        opts.det (1,1) double {mustBeNumeric} = 2 % Number of seconds 
+                                                  % following onset detection 
+                                                  % where activity will be included
+        opts.reg_thresh (1,1) = NaN % Proportion of channels in a region required
+                                    % for a region to be included
+                                    % If NaN, only one channel in the
+                                    % region is required
+                                
     end
+
+    atlas = opts.atlas;
+    det = opts.det;
+    reg_thresh = opts.reg_thresh;
     
     % We could include an optional argument to determine which onset detection
     % methods we will use
@@ -29,9 +42,10 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
     % Create table to store output
     colNames = {'Patient_id', 'Segment_ids', 'channel_names', 'ROI_ids',...
         'labelled_onset_chan', 'imprint_chan','EI_chan', 'PLHG_chan',...
-        'resected_chan', 'labelled_onset_roi','resected_roi', ...
-        'Surgery_outcome', 'Surgery_year', 'Outcome_year', 'Op_type'};
-    onset_output = cell(size(sz_count_pat,1), 15);
+        'resected_chan', 'labelled_onset_roi','labelled_onset_roi_names',...
+        'resected_roi', 'resected_roi_names','Surgery_outcome',...
+        'Surgery_year', 'Outcome_year', 'Op_type'};
+    onset_output = cell(size(sz_count_pat,1), 17);
     onset_output = cell2table(onset_output, 'VariableNames', colNames);
     % Populate patient Ids
     onset_output.Patient_id = string(sz_count_pat(:,1));
@@ -60,7 +74,27 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
             strrep(data_tbl.segment_channel_labels{1},' ', '')),:);
 
         recorded_roi_all_atlas = cat(2,recorded_channels.ROIname{:});
-        incl_roi = recorded_roi_all_atlas(3,:)';
+
+        atl_id =  [36; 60; 125; 250];
+        col_id = [1;2;3;4];
+        atl_tab = table(atl_id, col_id);
+
+        if ~ isempty(recorded_roi_all_atlas) % Some patients are missing ROI info
+            atl_row = table2array(atl_tab(atl_tab.atl_id == atlas,"col_id"));
+            incl_roi = recorded_roi_all_atlas(atl_row,:)';
+%             if atlas == "36"
+%                 incl_roi = recorded_roi_all_atlas(1,:)';
+%             elseif atlas == "60"
+%                 incl_roi = recorded_roi_all_atlas(2,:)';
+%             elseif atlas == "125"
+%                 incl_roi = recorded_roi_all_atlas(3,:)';
+%             elseif atlas == "250"
+%                 incl_roi = recorded_roi_all_atlas(4,:)';
+%             end
+        else
+            fprintf("Patient %s, no ROI names available \n", patient)
+            continue
+        end
         unq_roi = unique(incl_roi, 'stable');
 
         n_chan =  size(pat_data.segment_data{1,1},1);
@@ -88,7 +122,7 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
                 sprintf("Patient %s, seizure %s: No imprint onset detected", patient, string(pat_imprints.segment_id(sz)))
                 onset_time_imprint(sz) = NaN;
             else
-                onset_imprint(:,sz) = imprint_wind(:,onset_time);
+                onset_imprint(:,sz) = sum(imprint_wind(:,(onset_time:onset_time+det)),2) > 0;
                 onset_time_imprint(sz) = onset_time; %Imprint
             end
             
@@ -109,8 +143,8 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
  
         end
 
-        soz_roi = chan_to_roi_crit(recorded_channels.is_soz, incl_roi, unq_roi);
-        resected_roi = chan_to_roi_crit(recorded_channels.is_resected5, incl_roi, unq_roi);
+        [soz_roi, soz_roi_str] = chan_to_roi_crit(recorded_channels.is_soz, incl_roi, unq_roi, 'threshold', reg_thresh);
+        [resected_roi, resected_roi_str] = chan_to_roi_crit(recorded_channels.is_resected5, incl_roi, unq_roi, 'threshold', reg_thresh);
         
 %         for grp = 1:length(unq_roi)
 %             soz_roi(grp) = sum(recorded_channels.is_soz(string(incl_roi) == string(unq_roi(grp))))>0;
@@ -128,7 +162,9 @@ function [onset_output] = compute_onset(data_tbl, json_data, cell_imprint, sz_co
         onset_output(pat,:).PLHG_chan = mat2cell(onset_plhg,n_chan,sz_count);
         onset_output(pat,:).resected_chan = {recorded_channels.is_resected5};
         onset_output(pat,:).labelled_onset_roi = mat2cell(soz_roi', length(unq_roi), 1);
+        onset_output(pat,:).labelled_onset_roi_names = mat2cell(soz_roi_str,length(soz_roi_str),1);
         onset_output(pat,:).resected_roi = mat2cell(resected_roi',length(unq_roi),1);
+        onset_output(pat,:).resected_roi_names = mat2cell(resected_roi_str,length(resected_roi_str),1);
         onset_output(pat,:).Surgery_outcome = pat_data.ilae(1);
         surgery_date = getfield(json_data(1).treatment_details.treatment_date, 'x_date');
         onset_output(pat,:).Surgery_year = cellstr(string(surgery_date(1:4)));
