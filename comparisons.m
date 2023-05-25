@@ -22,7 +22,7 @@ addpath(genpath('help_functions/'))
 
 %%
 
-load("final_output_min_5.mat");
+%load("final_output_min_5.mat");
 %%
 
 % Ensure there are no duplicate patients
@@ -39,7 +39,7 @@ atl_tab = table(atl_id, col_id);
 
 
 for comparison = "resection" %, "pairwise"]
-    for det_method = "CLO" % ["imprint", "EI", "PLHG"] %
+    for det_method = "imprint" % ["imprint", "EI", "PLHG"] %
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
@@ -49,7 +49,7 @@ for comparison = "resection" %, "pairwise"]
                 % Iterate through patients
             for pat = 1:length(patients)
                 patient = patients(pat);
-                pat_onset = final_output(final_output.Patient_id == patient,:);
+                pat_onset = final_output(string(final_output.Patient_id) == patient,:);
                                 
                 % Compute normalised Jacccard's index and Sorensen-Dice coefficient
                 jac_sor_table = calc_jacc_sorr(pat_onset, "det_method",...
@@ -61,7 +61,7 @@ for comparison = "resection" %, "pairwise"]
                 pat_comp = jac_sor_table;
                 if chan_or_roi == "roi"
                     haus_table = calc_haus(pat_onset, ...
-                        atlas(table2array(atl_tab(atl_tab.atl_id == atl,"col_id")),:), "det_method", det_method, "comparison", comparison);
+                        atlas(3,:), "det_method", det_method, "comparison", comparison);
                     pat_comp = join(jac_sor_table, haus_table);
                 end
                 
@@ -77,8 +77,9 @@ for comparison = "resection" %, "pairwise"]
                 end
 
                 pat_surg_out = pat_onset.Surgery_outcome{:};
-                pat_out_year = pat_onset.Outcome_year{:};
-                year_1 = pat_out_year - str2double(pat_onset.Surgery_year) == 1;
+                pat_surg_year = pat_onset.("Surgery year");
+                pat_out_year = pat_onset.("Outcome year"){:};
+                year_1 = pat_out_year - pat_surg_year == 1;
                 pat_comp.Y1_outcome = repmat(pat_surg_out(year_1),size(pat_comp,1),1);
                 
                 if pat_comp.Y1_outcome == 8

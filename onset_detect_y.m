@@ -1,5 +1,6 @@
 clear all
 close all
+%%
 data_location = '~/Desktop/Sarah_onset/imprintDataExportFinal/'; % replace
 path_pipeline_exports = [data_location, 'export_ictal'];
 

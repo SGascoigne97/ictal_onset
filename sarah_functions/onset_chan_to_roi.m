@@ -48,7 +48,7 @@ function [onset_output] = onset_chan_to_roi(pat_onset, json_data, onset_output, 
         ismember(strrep(channel_details.chan_name,' ', ''),...
         strrep(onset_output.channel_names{:},' ','')),:);
     recorded_roi_all_atlas = cat(2,recorded_channels.ROIname{:});
-
+    
      atl_id =  [36; 60; 125; 250];
      col_id = [1;2;3;4];
      atl_tab = table(atl_id, col_id);
@@ -57,16 +57,7 @@ function [onset_output] = onset_chan_to_roi(pat_onset, json_data, onset_output, 
      
      % Extract the name of included regions
      incl_roi = recorded_roi_all_atlas(atl_row,:)';
-%     if atlas == "36"
-%         incl_roi = recorded_roi_all_atlas(1,:)';
-%     elseif atlas == "60"
-%         incl_roi = recorded_roi_all_atlas(2,:)';
-%     elseif atlas == "125"
-%         incl_roi = recorded_roi_all_atlas(3,:)';
-%     elseif atlas == "250"
-%         incl_roi = recorded_roi_all_atlas(4,:)';
-%     end
-    unq_roi = unique(incl_roi, 'stable');
+     unq_roi = unique(incl_roi, 'stable');
     
     onset_roi = zeros(length(unq_roi), size(pat_onset,1));
     nam_mat = strings(length(unq_roi), size(pat_onset,1));
