@@ -14,11 +14,11 @@ patients_dir = dir(path_pipeline_exports);
 patients = {patients_dir(3:end).name};
 
 % Choose atlas
-atl = 125;
+% atl = 125;
 % Choose threshold for allowing propagated activity (seconds)
-det = 0;
+% det = 0;
 
-min_sz = 5;
+min_sz = 8;
 chan_to_roi_thresh = 0.25; % One channel in region is sufficient to include region
 
 onset_calc_loc = "onset_calcs"; % Specify folder to store imprint values in
@@ -76,9 +76,9 @@ for pat = 1:length(patients)
     end
     
     % Choose atlas
-    %for atl = [60, 125]
+    for atl = [60, 125]
         % Choose threshold for allowing propagated activity (seconds)
-        %for det = [0,1,2]
+        for det = [0,1,2]
             % Compute onset using imprint, EI, and PLHG
             onset_output = compute_onset(pat_data, json_data, cell_imprint, sz_count_pat, ...
                 "atlas",atl, 'det', det, 'reg_thresh', chan_to_roi_thresh);
@@ -106,8 +106,8 @@ for pat = 1:length(patients)
                 else
                     final_output = onset_output;
                 end
-            %end
-        %end
+            end
+        end
 
 
     end
@@ -123,8 +123,9 @@ for pat = 1:size(final_output,1)
 end
 
 final_output = final_output(find(~rm_pat),:);
+save('final_output_all_param',"final_output")
 %%
-keep_safe  = final_output;
+%keep_safe  = final_output;
 %%
 
-save('final_output_min_5',"final_output")
+%save('final_output_min_5',"final_output")

@@ -39,7 +39,7 @@ atl_tab = table(atl_id, col_id);
 
 
 for comparison = "resection" %, "pairwise"]
-    for det_method = "imprint" % ["imprint", "EI", "PLHG"] %
+    for det_method = "CLO" % ["imprint", "EI", "PLHG"] %
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
