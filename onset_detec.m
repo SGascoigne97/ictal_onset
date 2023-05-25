@@ -26,7 +26,7 @@ onset_calc_loc = "onset_calcs"; % Specify folder to store imprint values in
 % as it will load previous save if folder is not empty
 
 % For each patient, compute onset based on imprint
-for pat = 1:length(patients)
+for pat = 2:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')

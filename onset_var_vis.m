@@ -14,7 +14,7 @@ param_set = final_output(final_output.atl == 60 & ...
         1,0,0]; % Onset in all seizures (red)
     cm = interp1(cm, 1:0.01:size(cm,1));
 %%
-for pat = 1:length(param_set.Patient_id)
+for pat = 3%1:length(param_set.Patient_id)
     patient = param_set.Patient_id(pat);
     pat_onset = param_set(param_set.Patient_id == patient,:);
 %     figure(pat)
@@ -46,3 +46,26 @@ for pat = 1:length(param_set.Patient_id)
      plotBrain(unq_roi, pat_onset.resected_roi{:}, cm, 'atlas', plot_atl, 'limits', [0,1], ...
         'savePath', char(sprintf('./figures/onset_var/%s_resec', patient)))
 end
+
+%% Patient 950 resection before preprocessing
+patient = "950";
+    % load json_data
+    filelist = dir(fullfile(strcat(path_pipeline_exports, "/UCLH", patient, "/"), '**/*.*'));  % get list of files and folders in any subfolder
+    filelist = filelist(~[filelist.isdir]);  % remove folders from list
+    folder = filelist(strcmp({filelist(:).name},'json_data.mat')).folder;
+    load(strcat(folder, '/json_data.mat')); % load the json_data file in the folder
+
+    chan_det = json_data.channel_details;
+    chan_missing_roi =  cellfun(@isempty,chan_det.ROIname);
+    chan_det = chan_det(~chan_missing_roi,:);
+    resec_chan = chan_det.is_resected5;
+    roi_names =  cat(2, chan_det.ROIname{:});
+    incl_roi = roi_names(2,:);
+    unq_roi = unique(incl_roi, 'stable');
+
+    [resec_bin, resec_names] = chan_to_roi_crit(resec_chan, incl_roi, unq_roi, "threshold", NaN);
+
+    unq_roi = strrep(unq_roi, 'r.', 'ctx-rh-');
+    unq_roi = strrep(unq_roi, 'l.', 'ctx-lh-');
+
+    plotBrain(unq_roi, resec_bin, cm, 'atlas', plot_atl, 'limits', [0,1])
