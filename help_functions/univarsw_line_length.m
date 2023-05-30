@@ -17,7 +17,7 @@ function  [lineLength] = univarsw_line_length(data, window, overlap)
                 % variables
         data double {mustBeNumeric,mustBeReal}
         window (1,1) double {mustBeInteger,mustBeGreaterThan(window,0)} 
-        overlap (1,1) double {mustBeInteger,mustBeLessThan(overlap,window),mustBeGreaterThanOrEqual(overlap,0)} = 0 %Default overlap is 0
+        overlap (1,1) double {mustBeLessThan(overlap,window),mustBeGreaterThanOrEqual(overlap,0)} = 0 %Default overlap is 0
     end
 
     % number of time series/signals/channels

@@ -96,11 +96,11 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         
         % Cap recruitment threshold to be between 2 and 5 seconds
         if recruitment_threshold < 2/wl 
-            recruitment_threshold = 2;
+            recruitment_threshold = 2/wl;
         elseif recruitment_threshold > 5/wl
-            recruitment_threshold = 5;
+            recruitment_threshold = 5/wl;
         end
-        fprintf('Seizure %s recruitment threshold: %d seconds \n',seizure_label,recruitment_threshold)
+        fprintf('Seizure %s recruitment threshold: %d seconds \n',seizure_label,recruitment_threshold*wl)
 
                 
         %if at least 2 features are abnormal in madscore, movum them & get

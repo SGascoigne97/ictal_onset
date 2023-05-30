@@ -23,11 +23,13 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
         opts.window_size (1,1) double {mustBeNumeric} = 1; % Decide window size (in seconds) for which markers and imprint are compute
         opts.min_sz_count (1,1) double {mustBeNumeric} = 5; % Same criteria as earlier but some patients will have fewer seizures following seizures with nio activity in imprint
         opts.folder = 'onset_calcs'; % folder to store markers in
+        opts.window_overlap (1,1) double {mustBeNumeric} = 0;
     end
     
     %fill in optional arguments
     window_size = opts.window_size;
     min_sz_count = opts.min_sz_count;
+    window_overlap = opts.window_overlap;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
@@ -35,24 +37,24 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
     sampling_rate=data_tbl.segment_fs(1) ;%just using the first, as all sampling was the same in our data after preproc.
     
     linelength_db = LL_db([basefolder '/LL_db/']); %setup folder for all Line Length measures
-    linelength_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0);
+    linelength_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap);
     linelength_db.paramset_tbl                       % display all currently tracked paramsets
     linelength_db.calc(data_tbl,[]);                       % calculate all parametersets for all segments in data
     
     energy_db = Energy_db([basefolder '/Energy_db']);
-    energy_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0);
+    energy_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap);
     energy_db.paramset_tbl                       % display all currently tracked paramsets
     energy_db.calc(data_tbl,[]);                       % calculate all parametersets for all segments in data
     
     
     %bands: [1 4; 4 8; 8 13; 13 30; 30 60, 60 100]; 
     bandpower_db = BP_db([basefolder '/BP_db']);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[1 4]);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[4 8]);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[8 13]);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[13 30]);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[30 60]);
-    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',0,'bandbounds',[60 100]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[1 4]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[4 8]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[8 13]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[13 30]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[30 60]);
+    bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[60 100]);
     bandpower_db.paramset_tbl                       % display all currently tracked paramsets
     bandpower_db.calc(data_tbl,[]);   
     
