@@ -33,11 +33,11 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
     xyz = atlas_scale.xyz{1,1};
 
     % Pull out the unique ROIs recorded for this patient
-    unq_roi = pat_onset.ROI_ids{1,1}; % Need to find out if I can get distances between channels (across grey matter) 
+    unq_roi = pat_onset.roi_names{1,1}; % Need to find out if I can get distances between channels (across grey matter) 
 
     if det_method == "CLO"
           % Extract the automatically detected onsets matrix
-        onset_binary = cell2mat(pat_onset.labelled_onset_roi);
+        onset_binary = cell2mat(pat_onset.clo_roi);
         seizure_ids = "CLO";
         sz_count = 1;
     else

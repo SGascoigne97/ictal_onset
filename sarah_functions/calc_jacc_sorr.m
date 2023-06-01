@@ -49,7 +49,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
 
     if det_method == "CLO"
         % Extract the clinically labelled onset array
-        onset_binary = cell2mat(pat_onset.(sprintf('labelled_onset_%s',chan_or_roi)));
+        onset_binary = cell2mat(pat_onset.(sprintf('clo_%s',chan_or_roi)));
         % skip patient if missing CLO data
         if min(isnan(onset_binary)) == 1
             fprintf("Patient %s does not have CLO data \n", pat_onset.Patient_id)
@@ -95,10 +95,10 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
             % Add the number of onset regions to the output table 
             comp_table.N_onset_regions(sz) = sum(sz_onset);
 
-              % Add in patient id
+            % Add in patient id
             comp_table.Patient_id(sz) = pat_onset.Patient_id(1);
 
-             %If a seizure does not have a detected onset, skip seizure
+            % If a seizure does not have a detected onset, skip seizure
             if sum(sz_onset, 'omitnan') == 0
                 comp_table.Jaccard(sz) = NaN;
                 comp_table.Jaccard_norm(sz) = NaN;
@@ -110,8 +110,8 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
 
             comp_table.Jaccard(sz) = jaccard(sz_onset,resected_binary_rm_nan);
             comp_table.Sorensen(sz) = (2*comp_table.Jaccard(sz))/(1+comp_table.Jaccard(sz));
-            perm_jac = zeros(1, n_perm);
-            perm_sor = zeros(1, n_perm);
+            perm_jac = nan(1, n_perm);
+            perm_sor = nan(1, n_perm);
             
             for perm = 1:n_perm
                 rng(perm)
@@ -188,8 +188,8 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
                                 rng(perm)
                                 seizure_table = array2table([sz_onset1 sz_onset2], 'VariableNames', {'Onset_1', 'Onset_2'});
                                 seizure_shuffled = seizure_table;
-                                seizure_shuffled.Resected = seizure_shuffled.Onset_1(randperm(size(seizure_shuffled,1)));
-                                seizure_shuffled.Onset = seizure_shuffled.Onset_2(randperm(size(seizure_shuffled,1)));
+                                seizure_shuffled.Onset_1 = seizure_shuffled.Onset_1(randperm(size(seizure_shuffled,1)));
+                                seizure_shuffled.Onset_2 = seizure_shuffled.Onset_2(randperm(size(seizure_shuffled,1)));
                                 
                                 % Compute Jaccard's index
                                 perm_jac(perm) = jaccard(seizure_shuffled.Onset_1, seizure_shuffled.Onset_2);

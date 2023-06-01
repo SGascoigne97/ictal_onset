@@ -36,10 +36,11 @@ chan_or_roi = "roi"; % I need to add Hausdorff to channel-level comparisons
 atl_id =  [36; 60; 125; 250];
 col_id = [1;2;3;4];
 atl_tab = table(atl_id, col_id);
+%atl = 2;
 
 
-for comparison = "resection" %, "pairwise"]
-    for det_method = "imprint" % ["imprint", "EI", "PLHG"] %
+for comparison = "pairwise" %, "pairwise"]
+    for det_method = "imprint" %["EI", "PLHG"]
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
@@ -55,19 +56,22 @@ for comparison = "resection" %, "pairwise"]
                 jac_sor_table = calc_jacc_sorr(pat_onset, "det_method",...
                     det_method, "comparison", comparison, 'n_perm',1000,...
                     "chan_or_roi", chan_or_roi);
+                jac_sor_table = jac_sor_table(~cellfun(@isempty, jac_sor_table.Patient_id),:);
+
                 if height(jac_sor_table) == 0
                     continue
                 end
                 pat_comp = jac_sor_table;
                 if chan_or_roi == "roi"
                     haus_table = calc_haus(pat_onset, ...
-                        atlas(3,:), "det_method", det_method, "comparison", comparison);
+                        atlas(atl,:), "det_method", det_method, "comparison", comparison);
+                    haus_table = haus_table(~isnan(haus_table.Hausdorff),:);
                     pat_comp = join(jac_sor_table, haus_table);
                 end
                 
                 if comparison == "resection"  & det_method == "CLO"
-                    onset_resec = pat_onset.labelled_onset_chan{:} + pat_onset.resected_chan{:} == 2;
-                    perc_chan_resec = sum(onset_resec)/sum(pat_onset.labelled_onset_chan{:});
+                    onset_resec = pat_onset.clo_chan{:} + pat_onset.resected_chan{:} == 2;
+                    perc_chan_resec = sum(onset_resec)/sum(pat_onset.clo_chan{:});
                     if chan_or_roi == "roi"
                         pat_comp = join([jac_sor_table, table(perc_chan_resec)], haus_table);
                     else 
@@ -95,9 +99,9 @@ for comparison = "resection" %, "pairwise"]
               
             % Save table for future analyses
             if save_table == 1
-                save(sprintf('tables/across_pat_%s_%s.mat', det_method, comparison), 'final_comp')
+                %save(sprintf('tables/across_pat_%s_%s.mat', det_method, comparison), 'final_comp')
                 % Also save as a CSV to open in R
-                writetable(final_comp, 'tables/min_5.csv')
+                writetable(final_comp, sprintf('tables/new_comp_%s.csv', det_method))
             end
            
             % Beeswarm plot across patients

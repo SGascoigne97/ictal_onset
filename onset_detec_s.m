@@ -16,26 +16,21 @@ patients_dir = dir(path_pipeline_exports);
 patients = {patients_dir(3:end).name};
 
 % Choose atlas
-atl = 3; %1=scale36,2=60,3=125,4=250
+atl = 2; %1=scale36,2=60,3=125,4=250
 % Choose threshold for allowing propagated activity (seconds)
 det = 0;
-
 
 min_sz = 5;
 chan_to_roi_thresh_type = "count";
 chan_to_roi_thresh = 1; % One channel in region is sufficient to include region
 
-onset_calc_loc = "onset_calcs"; % Specify folder to store imprint values in
+onset_calc_loc = "onset_calcs_overlap"; % Specify folder to store imprint values in
 % Need a new folder if using a different subset of the data/different data
 % as it will load previous save if folder is not empty
 
-%%
-% List patients with pre-processed data
-patients_dir = dir(path_pipeline_exports);
-patients = {patients_dir(3:end).name};
-
-% For each patient, compute onset based on imprint
-for pat = 32:length(patients)
+%
+% For each patient, compute onset based on imprint, EI, and PLHG
+for pat = 1 %:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')
@@ -45,6 +40,7 @@ for pat = 32:length(patients)
         continue 
     end
     pat_data = data_export;
+    clear data_export
     
     % load json_data
     filelist = dir(fullfile(strcat(path_pipeline_exports, "/", patient, "/"), '**/*.*'));  % get list of files and folders in any subfolder
@@ -129,10 +125,10 @@ for pat = 32:length(patients)
         chan_to_roi_thresh_type, chan_to_roi_thresh);
     
     % Add onsets to output table
-    onset_output = [{patient}, {ch_names}, {roi_names}, {ch2roi_map_mat}, auto_det_onset,...
+    onset_output = [{patient}, {pat_data.segment_id}, {ch_names}, {roi_names}, {ch2roi_map_mat}, auto_det_onset,...
         {clo_chan}, {clo_roi}, {resect_chan}, {resect_roi}];
-    onset_output.Properties.VariableNames([1:4,12:15]) = ...
-        {'Patient_id', 'channel_names', 'roi_names', 'chan_2_roi_matrix', ...
+    onset_output.Properties.VariableNames([1:5,13:16]) = ...
+        {'Patient_id', 'Segment_ids','channel_names', 'roi_names', 'chan_2_roi_matrix', ...
         'clo_chan', 'clo_roi', 'resected_chan', 'resected_roi'};
     
     %% attach meta data
@@ -153,3 +149,15 @@ for pat = 32:length(patients)
     end
 
 end
+%%
+% Remove patients with onsets across all regions in most seizures
+rm_pat = zeros(size(final_output, 1),1);
+for pat = 1:size(final_output,1)
+    ons_all_region = nansum(final_output.imprint_roi{pat,1})/size(final_output.imprint_roi{pat,1},1) == 1;
+    if sum(ons_all_region)/length(ons_all_region) >= 0.5
+        rm_pat(pat) = 1;
+    end
+end
+final_output = final_output(find(~rm_pat),:);
+%%
+save(sprintf('tables/final_output_updated_code_%d', atl),"final_output")

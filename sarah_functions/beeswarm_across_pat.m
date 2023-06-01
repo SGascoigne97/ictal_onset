@@ -84,12 +84,12 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
     % Find indeces to organise by mean value
     ind = [Ig; (size(good_mean,1)+Ib)];
     
-    pat_id_double = str2double(final_comp.Patient_id);
-    patient_ids = [str2double(good_mean.Patient_id); str2double(bad_mean.Patient_id)];
-    reorder_pat_label = nan(length(pat_id_double), 1);
+    pat_id = string(final_comp.Patient_id);
+    patient_ids = [good_mean.Patient_id; bad_mean.Patient_id];
+    reorder_pat_label = nan(length(pat_id), 1);
     for x = 1:length(patient_ids)
         i = patient_ids(ind(x));
-        reorder_pat_label(pat_id_double == i) = x;
+        reorder_pat_label(pat_id == string(i)) = x;
     end
     
     figure()

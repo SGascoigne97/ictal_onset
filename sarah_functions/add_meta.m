@@ -12,7 +12,7 @@ function [onset_output] = add_meta(onset_output, json_data)
 
 arguments
     onset_output 
-    json_data % SARAH: check that this is for one patient only 
+    json_data
 end
 
 % Surgery_outcome
@@ -25,10 +25,9 @@ ncol_exist = size(onset_output,2);
 treatment_details = json_data(1,:).treatment_details;
 treatment_year = str2double(treatment_details.treatment_date.x_date(1:4));
 
-
 onset_output = [onset_output {treatment_details.outcome_ILAE},...
     {treatment_year}, {treatment_details.outcome_year},...
-    {treatment_details.op_type}];
+    {treatment_details.op_type}, {cat(1,json_data.eeg_duration)}];
 
-onset_output.Properties.VariableNames(ncol_exist+(1:4)) = {'Surgery_outcome', ...
-    'Surgery year', 'Outcome year', 'Op type'};
+onset_output.Properties.VariableNames(ncol_exist+(1:5)) = {'Surgery_outcome', ...
+    'Surgery year', 'Outcome year', 'Op type', 'duration'};
