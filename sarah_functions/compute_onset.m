@@ -21,7 +21,7 @@ function [onset_output] = compute_onset(pat_data, pat_imprints, opts)
 
     arguments
         pat_data 
-        pat_imprints % SARAH: check that this is for one patient only 
+        pat_imprints 
         opts.wdw_sz (1,1) double = 2 
         opts.det (1,1) double {mustBeNumeric} = 0
     end

@@ -25,9 +25,18 @@ ncol_exist = size(onset_output,2);
 treatment_details = json_data(1,:).treatment_details;
 treatment_year = str2double(treatment_details.treatment_date.x_date(1:4));
 
+sz_types = strings(size(json_data,1),1);
+for sz = 1:size(json_data,1)
+    sz_types(sz) = json_data(sz).seizure_details.sz_type_ilae;
+end
+
+if size(json_data,1) == 1
+    sz_types = cellstr(sz_types);
+end
+
 onset_output = [onset_output {treatment_details.outcome_ILAE},...
     {treatment_year}, {treatment_details.outcome_year},...
-    {treatment_details.op_type}, {cat(1,json_data.eeg_duration)}];
+    {treatment_details.op_type}, {cat(1,json_data.eeg_duration)}, {sz_types}];
 
-onset_output.Properties.VariableNames(ncol_exist+(1:5)) = {'Surgery_outcome', ...
-    'Surgery year', 'Outcome year', 'Op type', 'duration'};
+onset_output.Properties.VariableNames(ncol_exist+(1:6)) = {'Surgery_outcome', ...
+    'Surgery year', 'Outcome year', 'Op type', 'duration', 'sz_types'};

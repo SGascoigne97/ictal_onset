@@ -8,11 +8,17 @@ channels_used = pat_data(1,:).segment_channel_labels{:};
 
 tbl_ids=zeros(length(channels_used),1);
 for i=1:length(channels_used)
-    tbl_ids(i)=find(strrep(string(channel_details.chan_name),' ', '')...
+    id = find(strrep(string(channel_details.chan_name),' ', '')...
         ==strrep(channels_used(i),' ',''));
+    if ~isempty(id)
+        tbl_ids(i)=id;
+    else
+        tbl_ids(i)=NaN;
+    end
 end
 
-channel_details_used=channel_details(tbl_ids,:);%this is now in the right order as the EEG data in terms of channels
+
+channel_details_used=channel_details( tbl_ids(~isnan(tbl_ids)),:);%this is now in the right order as the EEG data in terms of channels
 ch_names=channel_details_used.chan_name;
 %% create a matrix of dimensions n_chan x nROI, and a associated channel names list & ROI names list
 

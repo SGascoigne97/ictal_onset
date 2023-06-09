@@ -29,11 +29,12 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
     %fill in optional arguments
     window_size = opts.window_size;
     min_sz_count = opts.min_sz_count;
+    folder = opts.folder;
     window_overlap = opts.window_overlap;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
-    basefolder = sprintf([opts.folder, '/%s'], patient);
+    basefolder = sprintf('%s/%s', folder, patient);
     sampling_rate=data_tbl.segment_fs(1) ;%just using the first, as all sampling was the same in our data after preproc.
     
     linelength_db = LL_db([basefolder '/LL_db/']); %setup folder for all Line Length measures

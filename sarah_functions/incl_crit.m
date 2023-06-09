@@ -33,12 +33,19 @@ function [data_tbl, metadata_tbl, sz_count_pat] = incl_crit(data_tbl, opts)
 
     pat_sz_type = fillmissing(string(data_tbl.ilae_sz_type), 'constant', "N");
 
-    if length(sz_type) == 1
-        incl_data = data_tbl(pat_sz_type == sz_type,:); % Seizure type criteria
-    elseif length(sz_type) == 2
-        incl_data = [data_tbl(pat_sz_type == sz_type(1),:);...
-            data_tbl(pat_sz_type == sz_type(2),:)];
-    end
+    % Remove seizures that are no in the selected subtypes from data_tbl
+    incl_data = data_tbl(ismember(pat_sz_type, sz_type),:);
+
+%     if length(sz_type) == 1
+%         incl_data = data_tbl(pat_sz_type == sz_type,:); % Seizure type criteria
+%     elseif length(sz_type) == 2
+%         incl_data = [data_tbl(pat_sz_type == sz_type(1),:);...
+%             data_tbl(pat_sz_type == sz_type(2),:)];
+%     elseif length(sz_type) == 3
+%         incl_data = [data_tbl(pat_sz_type == sz_type(1),:);...
+%             data_tbl(pat_sz_type == sz_type(2),:);...
+%             data_tbl(pat_sz_type == sz_type(3),:);];
+%     end
 
     incl_data = incl_data(incl_data.duration >= min_sz_duration,:); % Duration criteria
 

@@ -103,7 +103,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         fprintf('Seizure %s recruitment threshold: %d seconds \n',seizure_label,recruitment_threshold*wl)
 
                 
-        %if at least 2 features are abnormal in madscore, movum them & get
+        %if at least 2 features are abnormal in madscore, movsum them & get
         %recruited channel at each point.
         SA=max(ict_features_mad,[],3)>mad_thresh;%max abnormality across the features, then check if that max is above threshold
         ms_a=movsum(SA,[0 recruitment_threshold-1],2);%forward looking sum

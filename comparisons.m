@@ -36,11 +36,11 @@ chan_or_roi = "roi"; % I need to add Hausdorff to channel-level comparisons
 atl_id =  [36; 60; 125; 250];
 col_id = [1;2;3;4];
 atl_tab = table(atl_id, col_id);
-%atl = 2;
+atl = 2;
 
 
-for comparison = "pairwise" %, "pairwise"]
-    for det_method = "imprint" %["EI", "PLHG"]
+for comparison = "resection" %, "pairwise"]
+    for det_method = "CLO" %["EI", "PLHG"]
         close all 
         clear final_comp
         fprintf('%s and %s \n', comparison, det_method)
@@ -56,7 +56,7 @@ for comparison = "pairwise" %, "pairwise"]
                 jac_sor_table = calc_jacc_sorr(pat_onset, "det_method",...
                     det_method, "comparison", comparison, 'n_perm',1000,...
                     "chan_or_roi", chan_or_roi);
-                jac_sor_table = jac_sor_table(~cellfun(@isempty, jac_sor_table.Patient_id),:);
+                jac_sor_table = jac_sor_table(~isnan(jac_sor_table.Jaccard),:);
 
                 if height(jac_sor_table) == 0
                     continue
