@@ -45,7 +45,7 @@ function [comp_table] = comp_auto_clo(clo, auto, opts)
     % In both cases we will also use a permutation test to determine if the
     % value is greater or less than expected based on chance
 
-    if sum(clo) == 0
+    if sum(clo) == 0 | size(auto,2) == 0
         comp_table = [];
         return
     end

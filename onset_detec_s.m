@@ -31,7 +31,7 @@ onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
 
 %
 % For each patient, compute onset based on imprint, EI, and PLHG
-for pat = 3:length(patients)
+for pat = 32%2:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')
@@ -50,7 +50,7 @@ for pat = 3:length(patients)
     load(strcat(folder, '/json_data.mat')); % load the json_data file in the folder
     
     % Apply inclusion criteria
-    [pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz);
+    [pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz, sz_type = ["focal", "sg", "subclin", "N"]);
     % Append patient data to data table (if inclusion criteria are met)
     if size(pat_data,1) < min_sz
         fprintf('Patient %s does not meet inclusion criteria \n', patient)
@@ -68,7 +68,7 @@ for pat = 3:length(patients)
     if size(pat_data,1) > 0
         % Compute imprint for all seizures
         [pat_data, pat_meta, cell_imprint,  sz_count_pat] = ...
-            calc_imprint(pat_data, pat_meta, 'window_overlap', wind_overlap,...
+                       calc_imprint(pat_data, pat_meta, 'window_overlap', wind_overlap,...
             'folder',onset_calc_loc, 'min_sz_count', min_sz);
         
     else 
@@ -97,7 +97,7 @@ for pat = 3:length(patients)
     end
     
     %% detect onset based on channels, then convert to onset ROIs
-    [auto_det_onset] = compute_onset(pat_data, cell_imprint, 'wdw_sz', 8, 'det', 0);
+    [auto_det_onset] = compute_onset(pat_data, cell_imprint, 'wdw_sz', 1, 'det', 8);
     % Extract resection and CLO channels
     resect_chan = ismember(pat_data.segment_channel_labels{1},...
         pat_data.resected_5mm{1}); % Determine which channels were resected
@@ -167,6 +167,7 @@ for pat = 3:length(patients)
     end
 
 end
+save('tables/final_output_all_sz',"final_output")
 %%
 % Remove patients with onsets across all regions in most seizures
 % rm_pat = zeros(size(final_output, 1),1);
@@ -177,5 +178,4 @@ end
 %     end
 % end
 % final_output = final_output(find(~rm_pat),:);
-%%
-% save('tables/final_output_all_sz',"final_output")
+

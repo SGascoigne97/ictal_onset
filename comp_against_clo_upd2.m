@@ -15,7 +15,7 @@
 %       seizures will be kept)
 
 % Parameters to be scanned to determine if results are robust
-final_output_both_atlas = final_output;
+
 atlas = [120, 250];
 per_sz_or_all_sz = ["all_sz", "per_sz"];
 det_method = ["imprint", "EI", "PLHG"];
@@ -23,6 +23,10 @@ det_method = ["imprint", "EI", "PLHG"];
 % Paramaters to select at start (will not be scanned)
 sz_types = "all"; %["focal", "subclin", "all"];
 sz_prop_thresh = 0.01;
+
+% Remove those without CLO
+rm_pat = cellfun(@sum,final_output.clo_chan) == 0;
+final_output = final_output(~rm_pat,:);
 
 for a = 1:length(atlas)
     fprintf("Lausanne %d ", atlas(a))
@@ -32,9 +36,9 @@ for a = 1:length(atlas)
             fprintf("using %s onset detection \n", det_method(d))
             clear all_pat_table
             % Itearate across patients
-            for pat = 1:size(final_output_both_atlas,1)
-                patient = final_output_both_atlas.Patient_id{pat};
-                pat_onset = final_output_both_atlas(string(final_output.Patient_id) == patient,: );
+            for pat = 1:size(final_output,1)
+                patient = final_output.Patient_id{pat};
+                pat_onset = final_output(string(final_output.Patient_id) == patient,: );
                 if all(isnan(pat_onset.clo_chan{:})) | sum(pat_onset.clo_chan{:}) ==0
                     fprintf("%s does not have clinically labelled onset \n", patient)
                      continue
@@ -61,7 +65,7 @@ for a = 1:length(atlas)
                     keep_sz = ismember(pat_sz_types, sz_type);
                     pat_auto = pat_auto(:,keep_sz);
                     pat_sz_id = pat_onset.Segment_ids{:}(keep_sz);
-                    % pat_sz_types = pat_onset.ilae_sz_type{:}(keep_sz);
+                    pat_sz_types = pat_onset.ilae_sz_type{:}(keep_sz);
                 end
                 
                 % Compare each imprint onset against CLO (with permutation test)
@@ -77,13 +81,14 @@ for a = 1:length(atlas)
                 pat_comp_tab.patient_id = repmat(string(patient),size(pat_comp_tab,1),1);
                 pat_comp_tab.outcome = repmat(pat_surg_out(year_1),size(pat_comp_tab,1),1);
                 pat_comp_tab.op_type = repmat(pat_onset.("Op type"),size(pat_comp_tab,1),1);
-
                 
                 % Identify whether results are per seizure or summarised across seizures
                 if per_sz_or_all_sz(s) == "per_sz"
                     pat_comp_tab.sz_id = pat_sz_id;
-                        else
+                    pat_comp_tab.sz_type = pat_sz_types;
+                else
                     pat_comp_tab.sz_id = {pat_sz_id};
+                    pat_comp_tab.sz_type = {pat_sz_types};
                 end
         
                 % Add patient to table
@@ -98,4 +103,18 @@ for a = 1:length(atlas)
             end
         end
     end
+end
+
+%%
+param_tab = table(repmat(repelem([120;250],2,1),3,1),...
+    repelem(["imprint";"EI";"PLHG"],4,1), repmat(["per_sz";"all_sz"],6,1),...
+    'VariableNames', ["atl", "det", "per_or_all"]);
+sz_prop_thresh = 0.01;
+
+for r = 1:size(param_mat,1)
+    param_output = onset_comp_clo(final_output, "atl",param_tab.atl(r),...
+        "per_or_all",param_tab.per_or_all(r),"det",param_tab.det(r),...
+        "sz_prop_thresh", sz_prop_thresh);
+     comp_table.(sprintf("laus_%d", param_tab.atl(r))).(sprintf("%s",param_tab.per_or_all(r))).(sprintf("%s", param_tab.det(r))) =...
+            param_output;
 end

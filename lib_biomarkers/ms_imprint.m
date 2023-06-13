@@ -17,8 +17,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         meta_tbl
         val_tbl
         t
-
-        opts.rec_thresh (1,1) double {mustBeNumeric, mustBePositive} = 0.1
+        opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "sec" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
+        opts.rec_thresh (1,1) double {mustBeNumeric} = 0.1
         opts.ict_buffer (1,1) double {mustBeInteger, mustBePositive} = 10 %in seconds
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
         opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 %percentage of seizure to be ignored at the start for calculation of max spread
@@ -26,6 +26,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
     end
     
     %fill in optional arguments
+    rec_type = opts.rec_type;
     rec_thresh=opts.rec_thresh;    
     mad_thresh=opts.mad_thresh;
     ict_buffer=opts.ict_buffer;
@@ -56,9 +57,6 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
     cell_t = cell(nsegs,1);
     
     for s = 1:nsegs
-        
-        
-        
         %read out seizure segment & compress all features into one 3D array
         features=log(cat(3,val_tbl{s,:}));%assuming all features require log transform - for now ok, needs changing maybe at input level
         fs=meta_tbl.segment_fs(s);%sampling freq
@@ -92,14 +90,20 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         seizure_label = meta_tbl.segment_id{s};
         duration = meta_tbl.duration(s);
         wl=(tw(2)-tw(1));
-        recruitment_threshold = ceil(rec_thresh*duration/wl);
-        
-        % Cap recruitment threshold to be between 2 and 5 seconds
-        if recruitment_threshold < 2/wl 
-            recruitment_threshold = 2/wl;
-        elseif recruitment_threshold > 5/wl
-            recruitment_threshold = 5/wl;
+
+        if rec_type == "prop"
+            recruitment_threshold = ceil(rec_thresh*duration/wl);
+            
+            % Cap recruitment threshold to be between 2 and 5 seconds
+            if recruitment_threshold < 2/wl 
+                recruitment_threshold = 2/wl;
+            elseif recruitment_threshold > 5/wl
+                recruitment_threshold = 5/wl;
+            end
+        elseif rec_type == "sec"
+            recruitment_threshold = rec_thresh/wl;
         end
+
         fprintf('Seizure %s recruitment threshold: %d seconds \n',seizure_label,recruitment_threshold*wl)
 
                 
