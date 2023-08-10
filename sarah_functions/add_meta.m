@@ -19,6 +19,9 @@ end
 % Surgery year
 % Outcome year
 % Op type
+% Duration of epilepsy
+% Age
+% Sex
 
 ncol_exist = size(onset_output,2);
 
@@ -44,9 +47,17 @@ if size(json_data,1) == 1
     end
 end
 
+pat_details = json_data.patient_details;
+sex = pat_details.Sex;
+onset_age = pat_details.Age_onset;
+year_of_birth = pat_details.DOB;
+age = treatment_year-year_of_birth;
+
 onset_output = [onset_output {treatment_details.outcome_ILAE},...
     {treatment_year}, {treatment_details.outcome_year},...
-    {treatment_details.op_type}, {cat(1,json_data.eeg_duration)}, {cellstr(sz_types)}];
+    {treatment_details.op_type}, {cat(1,json_data.eeg_duration)}, {cellstr(sz_types)},...
+    {sex}, {onset_age}, {age}];
 
-onset_output.Properties.VariableNames(ncol_exist+(1:6)) = {'Surgery_outcome', ...
-    'Surgery year', 'Outcome year', 'Op type', 'duration', 'sz_types'};
+onset_output.Properties.VariableNames(ncol_exist+(1:9)) = {'Surgery_outcome', ...
+    'Surgery year', 'Outcome year', 'Op type', 'duration', 'sz_types', 'sex',...
+    'onset_age', 'age'};

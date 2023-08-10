@@ -26,6 +26,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
         opts.window_overlap (1,1) double {mustBeNumeric} = 0;
         opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "prop" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
         opts.rec_thresh (1,1) double = 0.1 % Proportion of seizure used to determine location of activity in imprint
+        opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
     end
     
     %fill in optional arguments
@@ -35,6 +36,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
     window_overlap = opts.window_overlap;
     rec_type = opts.rec_type;
     rec_thresh = opts.rec_thresh;
+    mad_thresh = opts.mad_thresh;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
@@ -78,7 +80,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint(da
     val_tbl=[calcs_ll.LL_ms calcs_energy.energy_ms calcs_bp_delta.bp ...
         calcs_bp_theta.bp calcs_bp_alpha.bp calcs_bp_beta.bp calcs_bp_gamma.bp calcs_bp_hgamma.bp];
     [imprint_out,cell_imprint,~,~] = ms_imprint(metadata_tbl,val_tbl,...
-        calcs_ll.t_wndw, "rec_type", rec_type, "rec_thresh",rec_thresh);  % using the same t_wndw for all features as using same window length or overlap
+        calcs_ll.t_wndw, "rec_type", rec_type, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 

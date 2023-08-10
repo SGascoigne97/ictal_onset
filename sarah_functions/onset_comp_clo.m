@@ -29,7 +29,7 @@ function [all_pat_table] = onset_comp_clo(final_output, opts)
     % Itearate across patients
     for pat = 1:size(final_output,1)
         patient = final_output.Patient_id{pat};
-        pat_onset = final_output(string(final_output.Patient_id) == patient,: );
+        pat_onset = final_output(string(final_output.Patient_id) == patient,:);
         if all(isnan(pat_onset.clo_chan{:})) | sum(pat_onset.clo_chan{:}) ==0
             fprintf("%s does not have clinically labelled onset \n", patient)
              continue

@@ -17,21 +17,25 @@ patients = {patients_dir(3:end).name};
 
 % Choose atlas
 atlases = [2,3]; %1=scale36,2=60,3=125,4=250
+% Choose atlas
 % Choose threshold for allowing propagated activity (seconds)
-det = 0;
-
+det = 8;
 min_sz = 1;
+min_sz_dur = 9; % minimum seizure duration for inclusion
 chan_to_roi_thresh_type = "count";
 chan_to_roi_thresh = 1; % One channel in region is sufficient to include region
 wind_overlap = 7/8; % Overlap between imprint windows
+rec_type = "sec";
+rec_thresh = 3;
+mad_thresh = 5;
 
 onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
 % Need a new folder if using a different subset of the data/different data
 % as it will load previous save if folder is not empty
 
-%
-% For each patient, compute onset based on imprint, EI, and PLHG
-for pat = 32%2:length(patients)
+
+%% For each patient, compute onset based on imprint, EI, and PLHG
+for pat = 1%:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')
@@ -50,7 +54,8 @@ for pat = 32%2:length(patients)
     load(strcat(folder, '/json_data.mat')); % load the json_data file in the folder
     
     % Apply inclusion criteria
-    [pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz, sz_type = ["focal", "sg", "subclin", "N"]);
+    [pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz, ...
+        'sz_type', ["focal", "sg", "subclin", "N"], 'min_sz_duration', min_sz_dur);
     % Append patient data to data table (if inclusion criteria are met)
     if size(pat_data,1) < min_sz
         fprintf('Patient %s does not meet inclusion criteria \n', patient)
@@ -68,9 +73,10 @@ for pat = 32%2:length(patients)
     if size(pat_data,1) > 0
         % Compute imprint for all seizures
         [pat_data, pat_meta, cell_imprint,  sz_count_pat] = ...
-                       calc_imprint(pat_data, pat_meta, 'window_overlap', wind_overlap,...
-            'folder',onset_calc_loc, 'min_sz_count', min_sz);
-        
+                       calc_imprint(pat_data, pat_meta, 'window_overlap',...
+                       wind_overlap,'folder',onset_calc_loc, ...
+                       'min_sz_count', min_sz, 'mad_thresh',mad_thresh,...
+                       'rec_type', "sec", 'rec_thresh', 3);
     else 
         fprintf("Patient %s does not meet inclusion criteria \n", patient)
         continue
@@ -167,15 +173,16 @@ for pat = 32%2:length(patients)
     end
 
 end
-save('tables/final_output_all_sz',"final_output")
 %%
+save('tables/final_output.mat',"final_output")
+%
 % Remove patients with onsets across all regions in most seizures
-% rm_pat = zeros(size(final_output, 1),1);
-% for pat = 1:size(final_output,1)
-%     ons_all_region = nansum(final_output.imprint_roi{pat,1})/size(final_output.imprint_roi{pat,1},1) == 1;
-%     if sum(ons_all_region)/length(ons_all_region) >= 0.5
-%         rm_pat(pat) = 1;
-%     end
-% end
-% final_output = final_output(find(~rm_pat),:);
+rm_pat = zeros(size(final_output, 1),1);
+for pat = 1:size(final_output,1)
+    ons_all_region = nansum(final_output.imprint_roi_250{pat,1})/size(final_output.imprint_roi_250{pat,1},1) == 1;
+    if sum(ons_all_region)/length(ons_all_region) >= 0.5
+        rm_pat(pat) = 1;
+    end
+end
+final_output_clean = final_output(find(~rm_pat),:);
 

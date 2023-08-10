@@ -1,5 +1,5 @@
 % Comparing detected onset with clinically labelled onset 
-load("tables/all_pat_with_focal_2.mat");
+%load("tables/all_pat_with_focal_2.mat");
 
 %%
 sz_count_thresh = 0.01; 

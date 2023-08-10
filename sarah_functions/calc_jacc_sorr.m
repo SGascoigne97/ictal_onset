@@ -27,7 +27,7 @@ function [comp_table] = calc_jacc_sorr(pat_onset, opts)
     arguments
         pat_onset % onset_output table for one specific patient 
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["CLO", "imprint", "EI", "PLHG"])} = "imprint" 
-        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi" 
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi_120", "roi_250"])} = "roi_120" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection" 
         opts.n_perm (1,1) double = 100 
         opts.tau (1,1) double = 10^-16 

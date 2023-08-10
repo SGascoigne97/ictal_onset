@@ -1,22 +1,37 @@
 %%
-pat_onset = final_output(string(final_output.Patient_id) == patient,:);
+patient = "UCLH1005";
+onset_output = final_output(string(final_output.Patient_id) == patient,:);
 
-for sz = 8%:size(pat_data,1)
+load(sprintf('%s/%s.mat', data_location, patient));
+pat_data = data_export;
+[pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz, sz_type = ["focal", "sg", "subclin", "N"]);
+
+pat_meta = pat_data(:,1:(end-1));
+
+[pat_data, pat_meta, cell_imprint,  sz_count_pat] = ...
+    calc_imprint(pat_data, pat_meta, "window_overlap", wind_overlap,...
+    "folder",onset_calc_loc, "min_sz_count", min_sz,...
+    "rec_type", rec_type, "rec_thresh",rec_thresh);
+%%
+
+ons_ind = find(onset_output.imprint_chan{:}(:,3)+onset_output.imprint_chan{:}(:,6));
+example_chan_count = 20; %sum(onset_output.imprint_chan{:}(:,sz)); %length(onset_output.channel_names{:}); 
+    % We will pull out 20 example channels (including onset channels)
+chans = 1:size(sz_data,1);
+chans(ons_ind) = [];
+rng(1)
+vis_chans = [randsample(chans,example_chan_count-length(ons_ind)), ons_ind'];
+vis_binary = zeros(size(sz_data,1),1);
+vis_binary(vis_chans) = 1;
+vis_binary = logical(vis_binary);
+
+for sz = [3,6]%:size(pat_data,1)
     sz_row = pat_data(sz,:);
     sz_data = sz_row.segment_data{:};
     fs = sz_row.segment_fs;
     t = 1:size(sz_data,2);
     
-    example_chan_count = 15;
-    % We will pull out 15 example channels (including onset channels)
-    ons_ind = find(pat_onset.imprint_chan{:}(:,sz));
-    chans = 1:size(sz_data,1);
-    chans(ons_ind) = [];
-    rng(7)
-    vis_chans = [randsample(chans,example_chan_count-length(ons_ind)), ons_ind'];
-    vis_binary = zeros(size(sz_data,1),1);
-    vis_binary(vis_chans) = 1;
-    vis_binary = logical(vis_binary);
+    
     
     clrs = repelem(0, size(sz_data,1),3);
     %clrs(ons_ind,:) = [1,0,0];
@@ -25,7 +40,7 @@ for sz = 8%:size(pat_data,1)
     % Plot example channels
     opts.plot_labels = true;
     opts.clrs = clrs;
-    chan_names = pat_onset.channel_names{:}(vis_binary);
+    chan_names = onset_output.channel_names{:}(vis_binary);
     opts.labels = chan_names;
     opts.offset = 1000;
     
@@ -48,25 +63,53 @@ for sz = 8%:size(pat_data,1)
 % %     grid on
 
 
-    figure(3)
-    %subplot(1,2,1)
-    onset_time = pat_onset.when_onset{:}(sz,1)/8;
-    vis_seg_t = (512*(90)):(512*(120+pat_data(sz,:).duration));
+    figure(sz)
+    subplot(1,2,1)
+    onset_time = onset_output.when_onset{:}(sz,1)/8;
+    vis_seg_t = (512*(1)):(512*(120+pat_data(sz,:).duration));
     vis_plot_eeg((vis_seg_t/512)-120,sz_data(vis_binary,vis_seg_t),opts);
     xline(0,'g',  LineWidth=2)
     xline(onset_time, 'b', LineWidth=2)
     xline(pat_data(sz,:).duration, 'g',  LineWidth=2)
     
     %Plot imprint
-    figure(4)
-    %subplot(1,2,2)
-    imagesc(cell_imprint{sz,1}{:}(vis_binary,:))
-    set(gca, "YTick", [], "XTick",[])
-    cm = [1,1,1; 1,0,0];
+    %figure(sz+size(pat_data,1))
+    subplot(1,2,2)
+    imagesc(cell_imprint{sz,1}{:}(vis_binary,(onset_time*8):end))
+%     set(gca, "XTick", (1:size(cell_imprint{sz,1}{:},2)/8)*8, "XTickLabel", ...
+%         (1:size(cell_imprint{sz,1}{:},2)/8),"YTick", 1:example_chan_count,...
+%         "YTickLabel",onset_output.channel_names{:}(vis_binary), ...
+%         'TickLength',[0, 0])
+ set(gca, "YTick", [],'TickLength',[0, 0])
+    cm = [1,1,1; 0,0,1];
     colormap(cm)
 end
 
 %%
-figure(5)
-imagesc(final_output.imprint_roi_250{:})
-colormap(cm)
+figure()
+subplot(2,3,1)
+imagesc(test_output(string(test_output.Patient_id) == patient,:).clo_roi_120{:})
+set(gca, "YTick", 1:length(test_output(string(test_output.Patient_id) == patient,:).roi_names_120{:}), "YTickLabel", test_output(string(test_output.Patient_id) == patient,:).roi_names_120{:})
+subplot(2,3,2:3)
+imagesc(test_output(string(test_output.Patient_id) == patient,:).imprint_roi_120{:})
+set(gca, "YTick", [],  "XTick", [])
+
+subplot(2,3,4)
+imagesc(test_output(string(test_output.Patient_id) == patient,:).clo_roi_250{:})
+set(gca, "YTick", 1:length(test_output(string(test_output.Patient_id) == patient,:).roi_names_250{:}), "YTickLabel", test_output(string(test_output.Patient_id) == patient,:).roi_names_250{:})
+subplot(2,3,5:6)
+imagesc(test_output(string(test_output.Patient_id) == patient,:).imprint_roi_250{:})
+set(gca, "YTick", [],  "XTick", [])
+
+
+%%
+roi_names = pat_onset.roi_names_120{:};
+roi_names = strrep(roi_names, 'r.', 'ctx-rh-');
+roi_names = strrep(roi_names, 'l.', 'ctx-lh-');
+cm = [0.9,0.9,0.9; %  recorded but no channels remaining (-1: pale grey)
+        0,0,1];% onset (blue)
+cm = interp1(cm, 1:0.01:size(cm,1));
+    
+plotBrain(roi_names, pat_onset.imprint_roi_120{:}(:,3),cm, 'atlas', 'lausanne120_aseg', 'limits', [0,1])
+plotBrain(roi_names, pat_onset.imprint_roi_120{:}(:,11),cm, 'atlas', 'lausanne120_aseg', 'limits', [0,1])
+plotBrain(roi_names, pat_onset.clo_roi_120{:},cm, 'atlas', 'lausanne120_aseg', 'limits', [0,1])

@@ -28,7 +28,7 @@ function [] = beeswarm_across_pat(final_comp, onset_output, opts)
         onset_output
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["imprint", "EI", "PLHG"])} = "imprint" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection"
-        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi"
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi_120", "roi_250"])} = "roi_120"
         opts.comp_measure (1,1) string {mustBeMember(opts.comp_measure,...
             ["Jaccard","Jaccard_norm", "Sorensen", "Sorensen_norm", "Percentage_resec", "Hausdorff", "Hausdorff_norm"])} = "Jaccard_norm" 
         opts.save_plot (1,1) double = 0

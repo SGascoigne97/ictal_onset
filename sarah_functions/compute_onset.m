@@ -75,7 +75,7 @@ function [onset_output] = compute_onset(pat_data, pat_imprints, opts)
             onset_time_imprint(sz) = onset_time; %Imprint
         end
         
-        % Onset based on Epileptigonicity Index
+        % Onset based on Epileptigenicity Index
         %[EI,Nd,time,ERmaster,Na] = epileptogenicityIndex(ict');
         onset_ei(EI_tbl{sz}>0.3,sz) = 1;
     

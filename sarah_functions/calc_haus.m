@@ -21,7 +21,7 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
         atlas_scale 
         opts.det_method (1,1) string {mustBeMember(opts.det_method, ["CLO", "imprint", "EI", "PLHG"])} = "imprint" 
         opts.comparison (1,1) string {mustBeMember(opts.comparison, ["resection", "pairwise"])} = "resection" 
-        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi"])} = "roi" 
+        opts.chan_or_roi (1,1) string {mustBeMember(opts.chan_or_roi, ["chan", "roi_120", "roi_250"])} = "roi_120" 
     end
     
     %fill in optional arguments
@@ -33,11 +33,11 @@ function [comp_table] = calc_haus(pat_onset, atlas_scale, opts)
     xyz = atlas_scale.xyz{1,1};
 
     % Pull out the unique ROIs recorded for this patient
-    unq_roi = pat_onset.roi_names{1,1}; % Need to find out if I can get distances between channels (across grey matter) 
+    unq_roi = pat_onset.(sprintf("roi_names_%s", extractAfter(chan_or_roi, "roi_"))){1,1}; % Need to find out if I can get distances between channels (across grey matter) 
 
     if det_method == "CLO"
           % Extract the automatically detected onsets matrix
-        onset_binary = cell2mat(pat_onset.clo_roi);
+        onset_binary = cell2mat(pat_onset.sprintf("clo_%s", chan_or_roi));
         seizure_ids = "CLO";
         sz_count = 1;
     else
