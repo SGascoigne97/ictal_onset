@@ -76,29 +76,6 @@ for onset_across = [0, 1]
 end
 
 
-%% Comparing adjusted cohens kappa methods
-comp_tab = comp_meth_with_resec.across_sz.roi_120.clo;
-comp_tab = comp_tab(comp_tab.Outcome~=8,:);
-figure(1)
-tiledlayout(4,4)
-for coh_meth_1 = ["Coh", "Adj_Coh", "Adj_Coh_2","Perc"]
-    for coh_meth_2 = ["Coh", "Adj_Coh", "Adj_Coh_2","Perc"]
-        nexttile
-        if coh_meth_1 == coh_meth_2
-            histogram(comp_tab.(sprintf(coh_meth_1)), "BinWidth",0.1)
-            title(strrep(coh_meth_1,"_"," "))
-        else
-            scatter(comp_tab.(sprintf(coh_meth_1)),comp_tab.(sprintf(coh_meth_2)) ,'filled', "XJitter","rand", "XJitterWidth",0.2,  "YJitter","rand", "YJitterWidth",0.2 )
-            xlabel(strrep(coh_meth_1,'_', ' '))
-            ylabel(strrep(coh_meth_2,'_', ' '))
-            lsline()
-            title(sprintf("rho: %.3f",corr(comp_tab.(sprintf(coh_meth_1)), comp_tab.(sprintf(coh_meth_2)), "type","Spearman")))
-        end
-
-    end
-end
-
-
 
 
 %%
