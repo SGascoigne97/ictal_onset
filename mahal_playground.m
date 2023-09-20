@@ -16,6 +16,8 @@ window_size = 1;
 window_overlap = 7/8;
 mad_thresh = 2.5;
 
+ mc = -1/(sqrt(2)*erfcinv(3/2)); % fixed factor for MAD score calculation
+
 for pat = 1%:length(patients)
     
     patient = patients{pat};
@@ -122,19 +124,8 @@ for pat = 1%:length(patients)
             end
         end
 %% Compute MAD for preictal Mahalanobis distances ( we will remove any time windows where MAD >= mad_thresh)
-        mc = -1/(sqrt(2)*erfcinv(3/2)); % fixed factor for MAD score calculation
-        pre_mahal_mad_mat = nan(size(pre_vals,1), size(pre_vals(1,:,1),2));
-        
-        for chan = 1:size(pre_vals,1)
-            pre_dist = pre_mahal_mat(chan,:);
-            for ict_time_point = ict_time_points
-                pre_med = median(pre_dist, 2, 'omitnan');
-                pre_smad=mc*mad_rewrite(pre_dist,1,2);
-                pre_mahal_mad_mat(chan,:) = (pre_mahal_mat(chan,:)-pre_med)./pre_smad; %score ictal to median & scaled mad
-                
-            end
-        end
-        
+       
+
         %% Compute Mahalanobis distance between ictal observations and preictal distribution
         ict_mahal_mat = nan(size(ict_vals,1), size(ict_vals(1,:,1),2));
         for chan = 1:size(pre_vals,1)
@@ -159,7 +150,9 @@ for pat = 1%:length(patients)
             for ict_time_point = ict_time_points
                 pre_med = median(pre_dist, 2, 'omitnan');
                 pre_smad=mc*mad_rewrite(pre_dist,1,2);
-                pre_mahal_mad_mat(chan,:) = (pre_mahal_mat(chan,:)-pre_med)./pre_smad; %score ictal to median & scaled mad
+                pre_mahal_mad_chan = (pre_mahal_mat(chan,:)-pre_med)./pre_smad;
+                pre_mahal_mad_chan(pre_mahal_mad_chan >= mad_thresh) = NaN;
+                pre_mahal_mad_mat(chan,:) = pre_mahal_mad_chan;%score preictal to median & scaled mad
                 mahal_mad_mat(chan,:) = (ict_mahal_mat(chan,:)-pre_med)./pre_smad; %score ictal to median & scaled mad
             end
         end
@@ -298,49 +291,49 @@ for pat = 1%:length(patients)
  %%
 channel = "EEG GB_02-REF";
 chan = strcmp(data_tbl.segment_channel_labels{sz}, channel);
-  x_max = size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2); 
-        eeg_dat = data_tbl(sz,:).segment_data{:};
-        fig = figure();
-        tiledlayout(5,1)
-        sgtitle(string(data_tbl.segment_channel_labels{1,1}(chan)))
-        nexttile
-        eeg_dat_ict = eeg_dat(:,120*512:(120+data_tbl(sz,:).duration)*512);
-        plot((1:size(eeg_dat,2))/(512/8), eeg_dat(chan,:))
-        xline(960)
-        xlim([480, x_max])
-        set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-        title("EEG")
-        nexttile
-        plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)), [pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)])
-        xlim([480, x_max])
-        set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-        yline(mad_thresh)
-        xline(960)
-        title("MAD across time")
-        nexttile
-        plot((120*8)+(1:size(imprint,2)), imprint(chan,:))
-        ylim([-0.5,1.5])
-        xlim([480, x_max])
-        set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-        xline(960)
-        title(sprintf("Imprint (MAD thresh = %.1f)", mad_thresh))
-        nexttile
-        plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
-            movmedian([pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)], [mov_med_val,mov_med_val]))
-        xlim([480, x_max])
-        set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-        xline(960)
-        yline(mad_thresh)
-        title(sprintf("MAD moving median (%.2f seconds forwards and back)", mov_med_val/8))
-        nexttile
-        plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
-            movmedian([pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)], [mov_med_val,mov_med_val])>=mad_thresh)
-        ylim([-0.5,1.5])
-        xlim([480, x_max])
-        set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-        xline(960)
-        title(sprintf("Imprint using moving median (MAD thresh = %.1f)", mad_thresh))
-       
+x_max = size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2); 
+eeg_dat = data_tbl(sz,:).segment_data{:};
+fig = figure();
+tiledlayout(5,1)
+sgtitle(string(data_tbl.segment_channel_labels{1,1}(chan)))
+nexttile
+eeg_dat_ict = eeg_dat(:,120*512:(120+data_tbl(sz,:).duration)*512);
+plot((1:size(eeg_dat,2))/(512/8), eeg_dat(chan,:))
+xline(960)
+xlim([480, x_max])
+set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+title("EEG")
+nexttile
+plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)), [pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)])
+xlim([480, x_max])
+set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+yline(mad_thresh)
+xline(960)
+title("MAD across time")
+nexttile
+plot((120*8)+(1:size(imprint,2)), imprint(chan,:))
+ylim([-0.5,1.5])
+xlim([480, x_max])
+set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+xline(960)
+title(sprintf("Imprint (MAD thresh = %.1f)", mad_thresh))
+nexttile
+plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
+    movmedian([pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)], [mov_med_val,mov_med_val]))
+xlim([480, x_max])
+set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+xline(960)
+yline(mad_thresh)
+title(sprintf("MAD moving median (%.2f seconds forwards and back)", mov_med_val/8))
+nexttile
+plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
+    movmedian([pre_mahal_mad_mat(chan,:), mahal_mad_mat(chan,:)], [mov_med_val,mov_med_val])>=mad_thresh)
+ylim([-0.5,1.5])
+xlim([480, x_max])
+set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+xline(960)
+title(sprintf("Imprint using moving median (MAD thresh = %.1f)", mad_thresh))
+
         %%
 
 
