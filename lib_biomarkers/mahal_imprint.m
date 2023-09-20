@@ -64,7 +64,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         tw=t{s};%timing for each seizure, in actual seconds
         pre_ids = find(tw<=-1*ict_buffer);
         pre_vals = sz_mat_tab.feat_mat{s}(:,pre_ids,:);
-        ictal_ids = find(tw>-1*ict_buffer & tw<=data_tbl.duration(sz));
+        ictal_ids = find(tw>-1*ict_buffer & tw<=meta_tbl.duration(s));
         ict_vals = sz_mat_tab.feat_mat{s}(:,ictal_ids,:);
         
 %         %% Remove preictal outliers
@@ -81,14 +81,15 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         % channel, marker, and time point)
         pre_mahal_mat = nan(size(pre_vals,1), size(pre_vals(1,:,1),2));
         for chan = 1:size(pre_vals,1)
-            pre_time_points = 1:size(pre_vals(chan,:,1),2);
-            for pre_time_point = pre_time_points
-                if all(~isnan(squeeze(pre_vals(chan,pre_time_point,:))))
-                    ref_dist = squeeze(pre_vals(chan,pre_time_points(pre_time_points~=pre_time_point),:));
-                    ref_dist = ref_dist(~isnan(sum(ref_dist,2)),:);
-                    pre_mahal_mat(chan, pre_time_point) = mahal(squeeze(pre_vals(chan,pre_time_point,:))', ref_dist);
-                end
-            end
+            pre_mahal_mat(chan, :) = mahal(squeeze(pre_vals(chan,:,:)), squeeze(pre_vals(chan,:,:)));
+            % pre_time_points = 1:size(pre_vals(chan,:,1),2);
+            % for pre_time_point = pre_time_points
+            %     if all(~isnan(squeeze(pre_vals(chan,pre_time_point,:))))
+            %         ref_dist = squeeze(pre_vals(chan,pre_time_points(pre_time_points~=pre_time_point),:));
+            %         ref_dist = ref_dist(~isnan(sum(ref_dist,2)),:);
+            %         pre_mahal_mat(chan, pre_time_point) = mahal(squeeze(pre_vals(chan,pre_time_point,:))', ref_dist);
+            %     end
+            % end
         end
         
 %         %% Compute Mahalanobis distance between ictal observations and preictal distribution
