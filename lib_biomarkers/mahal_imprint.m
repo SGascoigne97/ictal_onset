@@ -64,7 +64,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         tw=t{s};%timing for each seizure, in actual seconds
         pre_ids = find(tw<=-1*ict_buffer);
         pre_vals = sz_mat_tab.feat_mat{s}(:,pre_ids,:);
-        ictal_ids = find(tw>-1*ict_buffer & tw<=data_tbl.duration(sz));
+        ictal_ids = find(tw>-1*ict_buffer & tw<=meta_tbl.duration(s));
         ict_vals = sz_mat_tab.feat_mat{s}(:,ictal_ids,:);
         
 %         %% Remove preictal outliers
@@ -193,10 +193,10 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [36,36], 2);
         recruitment_threshold = rec_thresh/wl;
        
-   
         ms_a=movsum(movmed_mahal_mad_mat>=mad_thresh,[0 recruitment_threshold-1],2);%forward looking sum
         ms_b=movsum(movmed_mahal_mad_mat>=mad_thresh,[recruitment_threshold-1 0],2);%backward looking sum
-        imprint = ms_a >= recruitment_threshold*0.8 | ms_b >= recruitment_threshold*0.8;%combining the backward and forward looking sum has the advantage of not cutting off early activity, or neglecting late activity
+        ms_c=movsum(movmed_mahal_mad_mat>=mad_thresh,[(recruitment_threshold/2)-1 (recruitment_threshold/2)-1],2); % sum across centre
+        imprint = ms_a >= recruitment_threshold*0.8 | ms_b >= recruitment_threshold*0.8 | ms_c >= recruitment_threshold*0.8 ;%combining the backward and forward looking sum has the advantage of not cutting off early activity, or neglecting late activity
 
         imprints{s} = imprint;
         
