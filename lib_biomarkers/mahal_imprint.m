@@ -1,4 +1,4 @@
-function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_mad,cell_pre_mahal_mat] = mahal_imprint(meta_tbl,sz_mat_tab,t,opts)
+function [tbl_imprint_out,cell_imprint,cell_t,cell_infos] = mahal_imprint(meta_tbl,sz_mat_tab,t,opts)
 % calculates "imprint" and other (initial) recruitment metrics of seizures.
 % 
 % inputs:
@@ -23,6 +23,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
         opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 %percentage of seizure to be ignored at the start for calculation of max spread
         opts.fig_ind = -1 % -1: no plotting, 0:new figure, k>0: figure with index k
+        opts.movmed_width (1,1) double {mustBeNumeric, mustBePositive} = 36
     end
     
     %fill in optional arguments
@@ -30,6 +31,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
     rec_thresh=opts.rec_thresh;    
     mad_thresh=opts.mad_thresh;
     ict_buffer=opts.ict_buffer;
+    movmed_width = opts.movmed_width;
     hsc=opts.hsc;
     fig_ind=opts.fig_ind;
     
@@ -53,10 +55,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
     nchr = zeros(nsegs,1);
     nmaxchr = zeros(nsegs,1);
     tmaxchr = zeros(nsegs,1);
-    cell_madscores = cell(nsegs,1);
-    cell_pre_mahal_mat = cell(nsegs,1);
+    cell_infos = cell(nsegs,1);
     cell_t = cell(nsegs,1);
-    cell_pre_features_mad = cell(nsegs,1);
     for s = 1:nsegs
         fprintf("\n Seizure %d", s)
         %read out seizure segment & compress all features into one 3D array
@@ -191,7 +191,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         
         %% Add inclusion criteria (activity persisting for at least 3 seconds)
         wl=(tw(2)-tw(1));
-        movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [36,36], 2);
+        movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [movmed_width,movmed_width], 2);
         recruitment_threshold = rec_thresh/wl;
        
         ms_a=movsum(movmed_mahal_mad_mat>=mad_thresh,[0 recruitment_threshold-1],2);%forward looking sum
@@ -217,8 +217,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
 
         % write output
         cell_imprint{s}=imprint;
-        cell_madscores{s}=cat(3,mahal_mad_mat,movmed_mahal_mad_mat,ms_a,ms_b);
-        cell_pre_mahal_mat{s} = pre_mahal_mat;
+        
+        cell_infos{s}={pre_mahal_mat,mahal_mad_mat,movmed_mahal_mad_mat,ms_a,ms_b,ms_c};
         % cell_pre_features_mad{s} = feat_pre_smad;
         cell_t{s}=tw(ictal_ids);
     
