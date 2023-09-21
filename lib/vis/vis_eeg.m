@@ -124,7 +124,7 @@ elseif size(options.Color,2) ~= 3
 end
 
 % if number of rows in Color is less than number of EEG channels, repeat
-% rows of Color to match
+% rows of Color to matcho
 options.Color = rep_colors(options.Color,n_chan);
 
 % make every other color slightly lighter or darker if ColorBeta ~= 0
@@ -144,8 +144,8 @@ end
 % change offset of channels
 offset_data=eeg_data;
 for i=1:n_chan
-    offset_data(i,:)=eeg_data(i,:)-mean(eeg_data(i,:));     % first de-mean each channel so centered at zero
-    offset_data(i,:)=offset_data(i,:)-options.Offset*(i-1);    % offset
+    offset_data(i,:)=eeg_data(i,:)-mean(eeg_data(i,:), 'omitnan');     % first de-mean each channel so centered at zero
+    offset_data(i,:)=offset_data(i,:)+options.Offset*(i-1);    % offset
 end
 
 
@@ -195,8 +195,8 @@ end
 % plot labels and set font sizes
 if ~isempty(options.ChannelNames) && ~options.ForceLabelsOff
     ax=ancestor(h(1),'axes');
-    ax.YTick=(options.Offset*(n_chan-1)*-1):options.Offset:0;
-    ax.YTickLabel=flipud(options.ChannelNames);
+    ax.YTick=0:options.Offset:(options.Offset*(n_chan-1));
+    ax.YTickLabel=options.ChannelNames;
     ax.YAxis.FontSize=options.YFontSize;
     ax.XAxis.FontSize = options.XFontSize;
 else
