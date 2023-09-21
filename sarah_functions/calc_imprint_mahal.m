@@ -1,4 +1,4 @@
-function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_mahal(data_tbl, metadata_tbl, opts)
+function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat, val_tbl] = calc_imprint_mahal(data_tbl, metadata_tbl, opts)
 % Compute seizure imprint based on EEG recordings
 
 % input:
@@ -27,6 +27,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_ma
         opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "prop" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
         opts.rec_thresh (1,1) double = 0.1 % Proportion of seizure used to determine location of activity in imprint
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
+        opts.movmed_width (1,1) double {mustBeNumeric, mustBePositive} = 36
     end
     
     %fill in optional arguments
@@ -37,6 +38,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_ma
     rec_type = opts.rec_type;
     rec_thresh = opts.rec_thresh;
     mad_thresh = opts.mad_thresh;
+    movmed_width = opts.movmed_width;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
@@ -86,8 +88,8 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_ma
         sz_mat=log(cat(3,val_tbl{sz,:})); % Here we log-transform markers 
         sz_mat_tab.feat_mat{sz} = sz_mat;
     end
-    [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,...
-        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh);  % using the same t_wndw for all features as using same window length or overlap
+    [imprint_out,cell_imprint,~,cell_infos] = mahal_imprint(data_tbl,sz_mat_tab,...
+        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, "movmed_width", movmed_width);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 
@@ -97,9 +99,7 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_ma
     data_tbl = data_tbl(~rm_sz,:);
     metadata_tbl = metadata_tbl(~rm_sz,:);
     cell_imprint = cell_imprint(~rm_sz,:);
-    cell_madscores = cell_madscores(~rm_sz,:);
-    cell_pre_features_mad = cell_pre_features_mad(~rm_sz,:);
-    cell_pre_mahal_mat(~rm_sz,:);
+    cell_infos = cell_infos(~rm_sz,:);
     % Count the number of focal seizures per patient 
     sz_count_pat = tabulate(data_tbl.patient_id);
     sz_count_pat = sz_count_pat(cell2mat(sz_count_pat(:,2))>=min_sz_count,:);
@@ -109,8 +109,6 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_ma
     metadata_tbl = metadata_tbl(matches(string(metadata_tbl.patient_id), string(sz_count_pat(:,1))),:);
     cell_imprint = table(cell_imprint);
     cell_imprint.segment_id = incl_sz(~rm_sz);
-    cell_imprint.cell_madscores = cell_madscores;  
-    cell_imprint.cell_pre_features_mad = cell_pre_features_mad;
-    cell_imprint.cell_pre_mahal_mat = cell_pre_mahal_mat;
+    cell_imprint.cell_infos = cell_infos;
     cell_imprint = cell_imprint(matches(string(cell_imprint.segment_id), string(data_tbl.segment_id)),:);
 end
