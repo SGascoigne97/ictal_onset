@@ -1,4 +1,4 @@
-function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_median_over_all_channels(data_tbl, metadata_tbl, opts)
+function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_mahal(data_tbl, metadata_tbl, opts)
 % Compute seizure imprint based on EEG recordings
 
 % input:
@@ -86,8 +86,8 @@ function [data_tbl, metadata_tbl, cell_imprint,  sz_count_pat] = calc_imprint_me
         sz_mat=log(cat(3,val_tbl{sz,:})); % Here we log-transform markers 
         sz_mat_tab.feat_mat{sz} = sz_mat;
     end
-    [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(metadata_tbl,sz_mat_tab,...
-        calcs_ll.t_wndw, "rec_type", rec_type, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh);  % using the same t_wndw for all features as using same window length or overlap
+    [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,...
+        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 
