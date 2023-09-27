@@ -1,8 +1,8 @@
-function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_mad,cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,t,opts)
+function [tbl_imprint_out,cell_imprint,cell_t,cell_infos] = mahal_imprint(data_tbl,sz_mat_tab,t,opts)
 % calculates "imprint" and other (initial) recruitment metrics of seizures.
 % 
 % inputs:
-%   - meta_tbl: table with columns for ids,pre,duration,fs, and data for better
+%   - data_tbl: table with columns for ids,pre,duration,fs, and data for better
 %       plots
 %   - val_cell: cell array with data matrix chns-by-time for each segment,
 %       cell columns are different features, rows are different segments
@@ -10,8 +10,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
 %       arrays contain time points in seconds corresponding to the columns of
 %       data matrix of that segment
 %   - opts: for more info on parameters look below
-%outputs are in order of meta_tbl, as we assume that input is in order of
-%meta_tbl
+%outputs are in order of data_tbl, as we assume that input is in order of
+%data_tbl
 
     arguments
         data_tbl
@@ -21,7 +21,8 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         opts.rec_thresh (1,1) double {mustBeNumeric} = 0.1
         opts.ict_buffer (1,1) double {mustBeInteger, mustBePositive} = 10 %in seconds
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
-        opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 % percentage of seizure to be ignored at the start for calculation of max spread
+        opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 %percentage of seizure to be ignored at the start for calculation of max spread
+        opts.movmed_width (1,1) double {mustBeNumeric, mustBePositive} = 36
     end
     
     %fill in optional arguments
@@ -29,14 +30,15 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
     rec_thresh=opts.rec_thresh;    
     mad_thresh=opts.mad_thresh;
     ict_buffer=opts.ict_buffer;
+    movmed_width = opts.movmed_width;
     hsc=opts.hsc;
     
     mc=-1/(sqrt(2)*erfcinv(3/2)); % fixed factor for MAD score calculation
-    %% fill in some info from meta_tbl
+    %% fill in some info from data_tbl
 
-%     nch = length(meta_tbl.segment_channel_labels{1});%!!!!!!!
-%     fs=meta_tbl.segment_fs(1);
-%     nsz = size(meta_tbl,1);%number of seizures
+%     nch = length(data_tbl.segment_channel_labels{1});%!!!!!!!
+%     fs=data_tbl.segment_fs(1);
+%     nsz = size(data_tbl,1);%number of seizures
     
     if size(data_tbl,1) ~= size(sz_mat_tab,1) || size(data_tbl,1) ~= numel(t) || ...
         size(sz_mat_tab,1) ~= numel(t)
@@ -46,8 +48,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
     nsegs = size(data_tbl,1);
     nmaxchr = zeros(nsegs,1);
     tmaxchr = zeros(nsegs,1);
-    cell_madscores = cell(nsegs,1);
-    cell_pre_mahal_mat = cell(nsegs,1);
+    cell_infos = cell(nsegs,1);
     cell_t = cell(nsegs,1);
     cell_pre_features_mad = cell(nsegs,1);
 
@@ -187,7 +188,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
         
         %% Add inclusion criteria (activity persisting for at least 3 seconds)
         wl=(tw(2)-tw(1));
-        movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [36,36], 2);
+        movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [movmed_width,movmed_width], 2);
         recruitment_threshold = rec_thresh/wl;
        
         ms_a=movsum(movmed_mahal_mad_mat>=mad_thresh,[0 recruitment_threshold-1],2);%forward looking sum
@@ -210,9 +211,9 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores,cell_pre_features_m
 
         % write output
         cell_imprint(s,:) = table(data_tbl.segment_id(s), {imprint});
-        cell_madscores{s}=cat(3,mahal_mad_mat,movmed_mahal_mad_mat,ms_a,ms_b);
-        cell_pre_mahal_mat{s} = pre_mahal_mat;
-        cell_pre_features_mad{s} = cell_pre_mahal_mat;
+        
+        cell_infos{s}={pre_mahal_mat,mahal_mad_mat,movmed_mahal_mad_mat,ms_a,ms_b,ms_c};
+        % cell_pre_features_mad{s} = feat_pre_smad;
         cell_t{s}=tw(ictal_ids);
 
         tbl_imprint_out(s,3:5) = table((onset_time-1)/8, {onset}, nchr);

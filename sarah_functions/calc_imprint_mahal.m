@@ -1,6 +1,5 @@
 function [data_tbl, cell_imprint,  sz_count_pat] = ...
-    calc_imprint_mahal(data_tbl, opts)
-% Compute seizure imprint based on EEG recordings
+    calc_imprint_mahal(data_tbl, opts)% Compute seizure imprint based on EEG recordings
 
 % input:
 %   - data_tbl: full data table
@@ -27,6 +26,7 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
         %opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "prop" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
         opts.rec_thresh (1,1) double = 0.1 % Proportion of seizure used to determine location of activity in imprint
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
+        opts.movmed_width (1,1) double {mustBeNumeric, mustBePositive} = 36
     end
     
     %fill in optional arguments
@@ -37,6 +37,7 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
     %rec_type = opts.rec_type;
     rec_thresh = opts.rec_thresh;
     mad_thresh = opts.mad_thresh;
+    movmed_width = opts.movmed_width;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
@@ -106,9 +107,7 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
 
     data_tbl = data_tbl(~rm_sz,:);
     cell_imprint = cell_imprint(~rm_sz,:);
-    cell_madscores = cell_madscores(~rm_sz,:);
-    cell_pre_features_mad = cell_pre_features_mad(~rm_sz,:);
-    cell_pre_mahal_mat(~rm_sz,:);
+    cell_infos = cell_infos(~rm_sz,:);
     % Count the number of focal seizures per patient 
     sz_count_pat = tabulate(data_tbl.patient_id);
     sz_count_pat = sz_count_pat(cell2mat(sz_count_pat(:,2))>=min_sz_count,:);
