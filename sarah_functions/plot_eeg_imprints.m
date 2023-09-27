@@ -30,7 +30,7 @@ function plot_eeg_imprints(data_tbl, cell_imprint, opts)
     end
 
     for sz = 1:size(cell_imprint,1)
-        f = figure('Visible', 'on');
+        f = figure('Visible', opts.fig_visible);
         f.Position = [100,100, 1600, 1000];
 %         subplot(1,9,1:8)
         eeg_dat = data_tbl.segment_data{sz,1};
@@ -63,9 +63,13 @@ function plot_eeg_imprints(data_tbl, cell_imprint, opts)
         imprint_eeg(imprint_eeg == 0) = NaN;
         imprint_eeg_dat = eeg_dat.*imprint_eeg;
    
-        onset_heatmap = zeros(size(imprint_bin,1), size(imprint_bin,2));
-        onset_heatmap(:,find(sum(imprint_bin,1)>0, 1, 'first') +[0:7]) = ...
-            imprint_bin(:,find(sum(imprint_bin,1)>0, 1, 'first') +[0:7]);
+        if ~isempty(find(sum(imprint_bin,1)>0, 1, 'first'))
+            onset_heatmap = zeros(size(imprint_bin,1), size(imprint_bin,2));
+            onset_heatmap(:,find(sum(imprint_bin,1)>0, 1, 'first') +[0:7]) = ...
+                imprint_bin(:,find(sum(imprint_bin,1)>0, 1, 'first') +[0:7]);
+        else 
+            continue
+        end
 
         hold on
         imagesc(imprint_bin, 'AlphaData', 0.5)

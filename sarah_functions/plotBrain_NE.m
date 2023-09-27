@@ -167,14 +167,23 @@ function [png] = plotBrain_NE(regions, values, opts)
     png_slice = png_copy(1,:,:);
 
     % set a colour for every region
+%     colours = ones(128,3)*255;
+%     for i = 1:length(regions)
+%         index = find(strcmp(regions{i},roi_names));
+%         % force values to go from 1 to max for colourmap
+%         colour = cm(round(((values(i)-min(values))/(max(values)-min(values)))*(size(cm,1)-1))+1,:);
+%         colours(index,:) = round(colour*255);
+%     end
+
+    % set a colour for every region
     colours = ones(128,3)*255;
     for i = 1:length(regions)
         index = find(strcmp(regions{i},roi_names));
         % force values to go from 1 to max for colourmap
-        colour = cm(round(((values(i)-min(values))/(max(values)-min(values)))*(size(cm,1)-1))+1,:);
+        %colour = cm(round(((values(i)-min(values))/(max(values)-min(values)))*(size(cm,1)-1))+1,:);
+        colour = cm(values(i)+1,:);
         colours(index,:) = round(colour*255);
     end
-
     
     % set new colour for every region
     for i = 1:size(png,1)

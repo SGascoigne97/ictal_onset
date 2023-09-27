@@ -1,5 +1,5 @@
 function [] = half_violin_upd(data_tab, comp_var, grps, opts)
-% Compute average EEG across regions of interest for each patient
+% Create half-violin plot to compare distributions between two groups
 
 % input:
 %   - data_tbl: full data table
@@ -18,20 +18,26 @@ function [] = half_violin_upd(data_tab, comp_var, grps, opts)
         data_tab table
         comp_var string
         grps (1,:) double
-        opts.y_lim (1,2) double = [NaN,NaN];
-        opts.grp_names = ["Group One", "Group Two"];
+        opts.bin_wds (:,1) double = NaN % One value per group 
+        opts.y_lim (:,2) double = [NaN,NaN]
+        opts.grp_names = ["Group One", "Group Two"]
+        opts.legend_pos (1,1) string = "northeast"
         opts.save_fig = 0;
         opts.save_loc = "figures/"
         opts.file_type = "png"
+        opts.new_fig (1,1) double = 1
 
     end
     
     %fill in optional arguments
+    bin_wds = opts.bin_wds;
     y_lim = opts.y_lim;
     save_fig = opts.save_fig;
     save_loc = opts.save_loc;
     file_type = opts.file_type;
     grp_names = opts.grp_names;
+    new_fig = opts.new_fig;
+    legend_pos = opts.legend_pos;
 
     grp_vals = unique(grps);
 
@@ -39,20 +45,40 @@ function [] = half_violin_upd(data_tab, comp_var, grps, opts)
     max_x = offset + 10;
     x_lim = [-10, max_x];
     
-    f = figure();
-    f.Position = [500,500,200*length(comp_var),500];
-    tiledlayout(1,length(comp_var)+1)
+    if new_fig == 1
+        f = figure();
+        f.Position = [500,500,400*length(comp_var),450];
+        tiledlayout(1,length(comp_var))
+    else 
+        if length(comp_var)>1
+            fprintf("Must be new figure if including multiple variables")
+            return
+        end
+    end
     
     var_ind = 1;
     for var = comp_var
         data_tab_var = data_tab(~isnan(data_tab.(sprintf(var))),:);
         grps_var = grps(~isnan(data_tab.(sprintf(var))));
-        nexttile
+        if new_fig == 1
+            nexttile
+        end
         data = data_tab_var.(sprintf(var));
 
         hold on
-    
-        bin_wd = 5*range(data)/length(data);
+        if length(bin_wds) == 1
+            if isnan(bin_wds)
+                bin_wd = 5*range(data)/length(data);
+            else
+                bin_wd = bin_wds;
+            end
+        else
+            if isnan(bin_wds(var_ind))
+                bin_wd = 5*range(data)/length(data);
+            else
+                bin_wd = bin_wds(var_ind);
+            end
+        end
         grp_a = data(grps_var == grp_vals(1));
         grp_b = data(grps_var == grp_vals(2));
                   
@@ -88,7 +114,7 @@ function [] = half_violin_upd(data_tab, comp_var, grps, opts)
         for grp_sz = non_zero_grps
             jitt = [jitt; rand(grp_sz,1)*grp_sz*0.8];
         end
-        scatter((var_ind-1)*offset+jitt, sort(grp_a), [], [0.3010 0.7450 0.9330], 'filled');
+        scatter(-jitt, sort(grp_a), [], [0.3010 0.7450 0.9330], 'filled');
         
         hist_vals_b = histcounts(grp_b, min_val_b:bin_wd:max_val_b);
         % Add scatter points
@@ -97,48 +123,49 @@ function [] = half_violin_upd(data_tab, comp_var, grps, opts)
         for grp_sz = non_zero_grps
             jitt = [jitt; rand(grp_sz,1)*grp_sz*0.8];
         end
-        scatter((var_ind-1)*offset-jitt, sort(grp_b), [],[0.8500 0.3250 0.0980], 'filled');
+        scatter(jitt, sort(grp_b), [],[0.8500 0.3250 0.0980], 'filled');
         
         if length(hist_vals_a) >1
             smooth_data_g = 1.05*(smoothdata(interp1(hist_vals_a, 1:0.01:length(hist_vals_a))));
-            fill((var_ind-1)*offset+[0 smooth_data_g 0], ...
+            fill(-[0 smooth_data_g 0], ...
                 rescale((1:length([0 smooth_data_g 0]))/length([0 smooth_data_g 0]),...
                 min(grp_a) - (bin_wd/10), max(grp_a) + (bin_wd/10)),[0.3010 0.7450 0.9330], 'FaceAlpha',0.3,...
                 'LineStyle','none')
         end 
-        plot((var_ind-1)*offset+[2,0], median(grp_a)*[1,1], "LineWidth", 2.5, "Color",  0.75*[0.3010 0.7450 0.9330] )
+        plot([-2,0], median(grp_a)*[1,1], "LineWidth", 2.5, "Color",  0.75*[0.3010 0.7450 0.9330] )
         
         if length(hist_vals_b) > 1
             smooth_data_b = 1.05*(smoothdata(interp1(hist_vals_b, 1:0.01:length(hist_vals_b))));
-            fill((var_ind-1)*offset -[0 smooth_data_b 0],...
+            fill([0 smooth_data_b 0],...
                 rescale((1:length([0 smooth_data_b 0]))/length([0 smooth_data_b 0]),...
                 min(grp_b) - (bin_wd/10), max(grp_b) + (bin_wd/10)), [0.8500 0.3250 0.0980], 'FaceAlpha',0.3,...
                 'LineStyle','none')
         end
-        plot((var_ind-1)*offset+[-2,0], median(grp_b)*[1,1], "LineWidth", 2.5, "Color", 0.75*[0.8500 0.3250 0.0980] )
+        plot([2,0], median(grp_b)*[1,1], "LineWidth", 2.5, "Color", 0.75*[0.8500 0.3250 0.0980] )
         set(gca, "XTick", [])
-        if all(~isnan(y_lim))
-            ylim(y_lim)
+        if any(~isnan(y_lim(:,1)))
+            if size(y_lim,1) == 1
+                ylim(y_lim);
+            else
+                if all(~isnan(y_lim(var_ind,:)))
+                    ylim(y_lim(var_ind,:));
+                end
+            end
+            
         end
         box off
-        title(strrep(var, "_", " "))
+        title(sprintf("%s (n=%d)", strrep(var, "_", " "), length(data)))
 
         var_ind = var_ind +1;
     end
 
-    nexttile
-    hold on
-    scatter(1,1,[],[0.3010 0.7450 0.9330], 'filled')
-    scatter(1,0,[],[0.8500 0.3250 0.0980], 'filled')
-    text(2,1, grp_names(1))
-    text(2,0, grp_names(2))
-    xlim([0,3])
-    ylim([-15,3])
-    hold off 
-    axis off
+    legend(grp_names, "Location", legend_pos, "box", "off")
 
-    %legend(opts.grp_names, "Box","off", "Location","northeastoutside")
     if save_fig == 1
-        saveas(f, sprintf("%s.%s", save_loc, file_type))
+        if new_fig == 0
+            fprintf("Save figure outside of function if not creating a new figure \n")
+        else
+            saveas(f, sprintf("%s.%s", save_loc, file_type))
+        end
     end
 end

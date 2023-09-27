@@ -57,7 +57,7 @@ function [onset_output] = compute_onset(pat_data, pat_imprints, opts)
     % Iterate over all patient seizures
     for sz = 1:sz_count
         % Onset based on seizure imprint
-        sz_imprint = pat_imprints{sz,1}{1,1}; 
+        sz_imprint = pat_imprints.cell_imprint{sz,1};
         imprint_wind = zeros(size(sz_imprint,1),size(sz_imprint,2)-(wdw_sz-1));
         for epoch = 1:(size(sz_imprint,2)-(wdw_sz-1))
             imprint_wind(:,epoch) = sum(sz_imprint(:,epoch:epoch+(wdw_sz-1)),2);

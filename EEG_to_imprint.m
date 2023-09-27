@@ -5,13 +5,14 @@ path_pipeline_exports = [data_location, 'export_ictal'];
 pat_data = load(sprintf('%s/%s.mat', data_location, patient));
 pat_data = pat_data.data_export;
 
+pat_onset = final_output(final_output.Patient_id == patient,:);
 pat_data = pat_data(ismember(pat_data.segment_id, pat_onset.Segment_ids{1,1}),:);
 
-pat_onset = final_output(final_output.Patient_id == "964",:);
+
 
 %%
 
-[test1, test2, cell_imprint,  test3] = calc_imprint(pat_data, pat_data(:,1:(end-1)));
+[~, ~, cell_imprint, ~] = calc_imprint(pat_data, pat_data(:,1:(end-1)));
 
 cell_imprint = cell_imprint(find(ismember(cell_imprint.segment_id, pat_onset.Segment_ids{1,1})),:);
 
