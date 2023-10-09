@@ -54,7 +54,6 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
     energy_db.paramset_tbl                       % display all currently tracked paramsets
     energy_db.calc(data_tbl,[]);                       % calculate all parametersets for all segments in data
     
-    
     %bands: [1 4; 4 8; 8 13; 13 30; 30 60, 60 100]; 
     bandpower_db = BP_db([basefolder '/BP_db']);
     bandpower_db.add_paramset('wndw_len',sampling_rate*window_size,'wndw_overlap',sampling_rate*window_overlap,'bandbounds',[1 4]);
@@ -88,7 +87,7 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
         sz_mat_tab.feat_mat{sz} = sz_mat;
     end
     [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,...
-        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, 'mov_med_val', rec_thresh/2);  % using the same t_wndw for all features as using same window length or overlap
+        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, 'movmed_width', rec_thresh/2, "ict_buffer", 10);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 
@@ -107,7 +106,6 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
 
     data_tbl = data_tbl(~rm_sz,:);
     cell_imprint = cell_imprint(~rm_sz,:);
-    cell_infos = cell_infos(~rm_sz,:);
     % Count the number of focal seizures per patient 
     sz_count_pat = tabulate(data_tbl.patient_id);
     sz_count_pat = sz_count_pat(cell2mat(sz_count_pat(:,2))>=min_sz_count,:);

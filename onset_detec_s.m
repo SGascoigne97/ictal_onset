@@ -29,13 +29,14 @@ rec_type = "sec";
 rec_thresh = 3;
 mad_thresh = 5;
 
+
 onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
 % Need a new folder if using a different subset of the data/different data
 % as it will load previous save if folder is not empty
 
 
 %% For each patient, compute onset based on imprint, EI, and PLHG
-for pat = 1%:length(patients)
+for pat = 1:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')
@@ -87,6 +88,11 @@ for pat = 1%:length(patients)
         fprintf("Patient %s does not meet inclusion criteria \n", patient)
         continue
     end
+
+    % Remove seizures from json data that were removed when computing
+    % imprint
+    json_data = json_data(contains(string(extractfield(cat(2,json_data.x_id),...
+        'x_oid')), string(pat_data.segment_id)));
 
      %%
     % Check order of segments in data and cell_imprint are the same
@@ -173,16 +179,25 @@ for pat = 1%:length(patients)
     end
 
 end
-%%
-save('tables/final_output.mat',"final_output")
-%
-% Remove patients with onsets across all regions in most seizures
-rm_pat = zeros(size(final_output, 1),1);
-for pat = 1:size(final_output,1)
-    ons_all_region = nansum(final_output.imprint_roi_250{pat,1})/size(final_output.imprint_roi_250{pat,1},1) == 1;
-    if sum(ons_all_region)/length(ons_all_region) >= 0.5
-        rm_pat(pat) = 1;
-    end
+
+% Add in patient outcome column
+for pat = 1:size(final_output, 1)
+    pat_onset = final_output(pat,:);
+    outcome_id = pat_onset.("Outcome year"){:}-pat_onset.("Surgery year") == 1;
+    final_output.outcome(pat) = pat_onset.Surgery_outcome{:}(outcome_id);
 end
-final_output_clean = final_output(find(~rm_pat),:);
+
+%%
+
+save('tables/final_output.mat',"final_output")
+
+% % Remove patients with onsets across all regions in most seizures
+% rm_pat = zeros(size(final_output, 1),1);
+% for pat = 1:size(final_output,1)
+%     ons_all_region = nansum(final_output.imprint_roi_250{pat,1})/size(final_output.imprint_roi_250{pat,1},1) == 1;
+%     if sum(ons_all_region)/length(ons_all_region) >= 0.5
+%         rm_pat(pat) = 1;
+%     end
+% end
+% final_output_clean = final_output(find(~rm_pat),:);
 

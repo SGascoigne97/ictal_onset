@@ -8,7 +8,7 @@ addpath(genpath('help_functions'))
 addpath('lib_biomarkers')
 addpath('lib_dataflow')
 addpath('sarah_functions')
-addpath(genpath('/home/campus.ncl.ac.uk/b5007876/Desktop/Database Code/ieeg-norm-map-pipeline/lib/'))
+addpath(genpath('/home/campus.ncl.ac.uk/b5007876/Desktop/Database Code/ieeg-norm-map-pipeline/lib/')) % change
 
 %%
 % List patients with pre-processed data
@@ -32,7 +32,7 @@ onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
 % as it will load previous save if folder is not empty
 %
 % For each patient, compute onset based on imprint, EI, and PLHG
-for pat = 2:5 %6:length(patients)
+for pat = 1:length(patients)
     patient = patients{pat};
 
     if exist(sprintf('%s/%s.mat', data_location, patient), 'file')

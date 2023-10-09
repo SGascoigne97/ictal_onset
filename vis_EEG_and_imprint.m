@@ -1,10 +1,22 @@
 %%
+det = 8;
+min_sz = 1;
+min_sz_dur = 9; % minimum seizure duration for inclusion
+chan_to_roi_thresh_type = "count";
+chan_to_roi_thresh = 1; % One channel in region is sufficient to include region
+wind_overlap = 7/8; % Overlap between imprint windows
+rec_type = "sec";
+rec_thresh = 3;
+mad_thresh = 5;
+
+onset_calc_loc = "imprint_ons"; 
+
 patient = "UCLH1005";
 onset_output = final_output(string(final_output.Patient_id) == patient,:);
 
 load(sprintf('%s/%s.mat', data_location, patient));
 pat_data = data_export;
-[pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', min_sz, sz_type = ["focal", "sg", "subclin", "N"]);
+[pat_data, ~, ~] = incl_crit(pat_data, 'min_sz_count', 1, sz_type = ["focal", "sg", "subclin", "N"]);
 
 pat_meta = pat_data(:,1:(end-1));
 
@@ -13,17 +25,27 @@ pat_meta = pat_data(:,1:(end-1));
     "folder",onset_calc_loc, "min_sz_count", min_sz,...
     "rec_type", rec_type, "rec_thresh",rec_thresh);
 %%
+% 
+% ons_ind = find(onset_output.imprint_chan{:}(:,3)+onset_output.imprint_chan{:}(:,6));
+% example_chan_count = 20; %sum(onset_output.imprint_chan{:}(:,sz)); %length(onset_output.channel_names{:}); 
+%     % We will pull out 20 example channels (including onset channels)
+% chans = 1:size(sz_data,1);
+% chans(ons_ind) = [];
+% rng(1)
+% vis_chans = [randsample(chans,example_chan_count-length(ons_ind)), ons_ind'];
+% vis_binary = zeros(size(sz_data,1),1);
+% vis_binary(vis_chans) = 1;
+% vis_binary = logical(vis_binary);
 
-ons_ind = find(onset_output.imprint_chan{:}(:,3)+onset_output.imprint_chan{:}(:,6));
-example_chan_count = 20; %sum(onset_output.imprint_chan{:}(:,sz)); %length(onset_output.channel_names{:}); 
-    % We will pull out 20 example channels (including onset channels)
-chans = 1:size(sz_data,1);
-chans(ons_ind) = [];
+% We will show a subsection of EEG channels (25) for clearer visualisations
+% We must include any onset channels so imprint onset across seizures has
+% no empty columns
+incl_channels = sum(final_output(pat,:).imprint_chan{:}, 2) > 0;
+remaining_channels = find(~incl_channels);
+
 rng(1)
-vis_chans = [randsample(chans,example_chan_count-length(ons_ind)), ons_ind'];
-vis_binary = zeros(size(sz_data,1),1);
-vis_binary(vis_chans) = 1;
-vis_binary = logical(vis_binary);
+random_channels = remaining_channels(randsample(length(remaining_channels), 25 - sum(incl_channels)));
+incl_channels(random_channels) = 1;
 
 for sz = [3,6]%:size(pat_data,1)
     sz_row = pat_data(sz,:);
@@ -35,12 +57,12 @@ for sz = [3,6]%:size(pat_data,1)
     
     clrs = repelem(0, size(sz_data,1),3);
     %clrs(ons_ind,:) = [1,0,0];
-    clrs = clrs(vis_binary,:);
+    clrs = clrs(incl_channels,:);
     
     % Plot example channels
     opts.plot_labels = true;
     opts.clrs = clrs;
-    chan_names = onset_output.channel_names{:}(vis_binary);
+    chan_names = onset_output.channel_names{:}(incl_channels);
     opts.labels = chan_names;
     opts.offset = 1000;
     
@@ -63,11 +85,11 @@ for sz = [3,6]%:size(pat_data,1)
 % %     grid on
 
 
-    figure(sz)
+    figure()
     subplot(1,2,1)
     onset_time = onset_output.when_onset{:}(sz,1)/8;
     vis_seg_t = (512*(1)):(512*(120+pat_data(sz,:).duration));
-    vis_plot_eeg((vis_seg_t/512)-120,sz_data(vis_binary,vis_seg_t),opts);
+    vis_plot_eeg((vis_seg_t/512)-120,sz_data(incl_channels,vis_seg_t),opts);
     xline(0,'g',  LineWidth=2)
     xline(onset_time, 'b', LineWidth=2)
     xline(pat_data(sz,:).duration, 'g',  LineWidth=2)
@@ -75,7 +97,7 @@ for sz = [3,6]%:size(pat_data,1)
     %Plot imprint
     %figure(sz+size(pat_data,1))
     subplot(1,2,2)
-    imagesc(cell_imprint{sz,1}{:}(vis_binary,(onset_time*8):end))
+    imagesc(cell_imprint{sz,1}{:}(incl_channels,(onset_time*8):end))
 %     set(gca, "XTick", (1:size(cell_imprint{sz,1}{:},2)/8)*8, "XTickLabel", ...
 %         (1:size(cell_imprint{sz,1}{:},2)/8),"YTick", 1:example_chan_count,...
 %         "YTickLabel",onset_output.channel_names{:}(vis_binary), ...

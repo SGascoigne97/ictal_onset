@@ -1,242 +1,7 @@
-final_output_all = load('tables/final_output_all_sz.mat');
-final_output_all = final_output_all.final_output;
-addpath(genpath('sarah_functions'))
 
-% Remove patients with no labelled CLO or no outcome 
-final_output = final_output_all(final_output_all.outcome ~= 8,:);
-
-
-%% Sub question 1: Does seizure onset tend to be resected?
-det_meths = ["clo", "imprint", "EI"];
-comp_measures = ["Perc", "Perc_z"];
-
-onset_acr_thresh = 0.5;
-% Create an empty table to store output
-%fprintf("%s\n", onset_across_title(onset_across))
-atl = [72,120,250,500];
-
-% Create structure with all comparisons between onset (CLO and automatic)
-% and resection
-parcs = ["chan", "roi_" + atl([2,3])];
-
-for parc = parcs
-    vols = atlas.vol{atl_ind};
-    for det_meth = det_meths
-        comp_meth_tab = compute_resec_comp(final_output,atlas(atl_ind,:),vols,...
-            "chan_or_roi", parc, "det_meth", det_meth,...
-            "onset_acr_thresh",onset_acr_thresh,"onset_across",onset_across);
-        comp_meth_tab.outcome_cat = categorical(comp_meth_tab.Outcome>2,[0,1], ["ILAE 1-2", "ILAE 3+"]);
-        comp_meth_with_resec.(sprintf("%s", onset_across_title(onset_across))).(sprintf("%s", parc)).(sprintf("%s", det_meth)) = comp_meth_tab;
-    end
-end
-
-save_loc = "figures/subquestions/q1/";
-file_type = "svg";
-
-for parc = ["chan", "roi_120"]
-    if parc == "chan"
-        comp_measures = "Perc";
-    else
-        comp_measures = ["Perc", "Perc_vol"];
-    end
-    half_violin(comp_meth_with_resec, det_meths, comp_measures, "parc", parc,...
-        "onset_across", 1, "vis_plot", "on",...
-        "save_fig", 1, "save_loc", save_loc,  "file_type", file_type)
-end
 
 %%
-var_names = {'Parc','Det','All','Total','Fav','Fav_total', 'Unfav', 'Unfav_total'};
-onset_resec_tab = array2table(nan(0,8),'VariableNames',var_names);
 
-
-for parc = ["chan", "roi_120", "roi_250"]
-    for det = det_meths
-        data_tab = comp_meth_with_resec.across_sz.(sprintf("%s", parc)).(sprintf("%s", det));
-        data = data_tab.Perc;
-        out = data_tab.Outcome;
-        
-        acr = sum(data>=0.5);
-        fav = sum(data(out<3)>=0.5);
-        unfav = sum(data(out>2)>=0.5);
-
-        param_tab = array2table([parc, det], "VariableNames", var_names(1:2));
-        val_tab = array2table([acr, length(data), fav, length(data(out<3)), unfav, length(data(out>2))], "VariableNames", var_names(3:end));
-        onset_resec_tab = [onset_resec_tab;param_tab, val_tab];
-    end
-end
-
-onset_resec_tab.All_perc = onset_resec_tab.All./onset_resec_tab.Total;
-onset_resec_tab.Fav_perc = onset_resec_tab.Fav./onset_resec_tab.Fav_total;
-onset_resec_tab.Unfav_perc = onset_resec_tab.Unfav./onset_resec_tab.Unfav_total;
-
-%% Sub question 2: Is resecting a larger proportion of the clinically 
-% labelled onset (based on volume) associated with more favourable outcomes?
-
-save_loc = "figures/subquestions/q2/";
-
-comp_outcome = 0;
-onset_across = 1;
-onset_across_title = ["per_sz", "across_sz"];
-comp_outcome_title = ["", "_comp_outcome"];
-n_perm = 1000;
-
-det_meths = ["clo", "imprint", "EI"];
-
-onset_acr_thresh = 0.5;
-% Create an empty table to store output
-fprintf("%s\n", onset_across_title(onset_across))
-chan_or_roi = "roi_120";
-
-final_output = final_output_all;
-
-for det_meth = det_meths
-    comp_meth_tab = compute_resec_vol_comp(final_output, atlas,...
-        "chan_or_roi", chan_or_roi, "det_meth", det_meth, "n_perm",n_perm,...
-        "onset_acr_thresh",onset_acr_thresh,"onset_across",onset_across);
-    
-        %comp_meth_tab = comp_meth_tab(comp_meth_tab.Sz_count >4,:);
-        comp_meth_with_resec_vol.(sprintf("%s", onset_across_title(onset_across+1))).(sprintf("%s", chan_or_roi)).(sprintf("%s", det_meth)) = comp_meth_tab;
-end
-%%
-
-atl = [72,120,250,500];
-atl_ind = 2;
-chan_or_roi = sprintf("roi_%d", atl(atl_ind));
-vols = atlas.vol{atl_ind};
-
-
-for det_meth = det_meths
-    comp_meth_tab = compute_resec_comp(final_output,atlas(atl_ind,:),vols,...
-        "chan_or_roi", chan_or_roi, "det_meth", det_meth, "n_perm",n_perm,...
-        "onset_acr_thresh",onset_acr_thresh,"onset_across",onset_across);
-        comp_meth_with_resec.(sprintf("%s", onset_across_title(onset_across))).(sprintf("%s", chan_or_roi)).(sprintf("%s", det_meth)) = comp_meth_tab;
-    
-    comp_meth_tab.outcome_cat = categorical(comp_meth_tab.Outcome>2,[0,1], ["ILAE 1-2", "ILAE 3+"]);
-    
-   
-    figure("Position", [100,1000,800,800])
-    sgtitle(det_meth)
-    subplot(3,3,[2,3,5,6])
-    hold on
-    scatter(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 1-2",:).Perc, comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 1-2",:).Perc_vol, 'b',"filled", "XJitter","randn", "YJitter","randn", "XJitterWidth",0.1,"YJitterWidth",0.1)
-    scatter(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 3+",:).Perc, comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 3+",:).Perc_vol, 'r',"filled", "XJitter","randn", "YJitter","randn", "XJitterWidth",0.1,"YJitterWidth",0.1)
-    plot([0,1], [0,1], 'k--')   
-    hold off
-    xlabel("Perc (binary)")
-    ylabel("Perc (vol)")
-    xlim([0,1.1])
-    ylim([0,1.1])
-
-    subplot(3,3,[1,4])
-    hold on
-    histogram(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 1-2",:).Perc_vol, "FaceColor", 'b', "BinWidth",0.05)
-    histogram(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 3+",:).Perc_vol, "FaceColor", 'r', "BinWidth",0.05)
-    hold off
-    xlim([0,1.1])
-    set(gca, 'view',[90, -90],'YDir','reverse')
-    axis off
-  
-
-    subplot(3,3,[8,9])
-    hold on
-    histogram(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 1-2",:).Perc, "FaceColor", 'b', "BinWidth",0.05)
-    histogram(comp_meth_tab(comp_meth_tab.outcome_cat == "ILAE 3+",:).Perc, "FaceColor", 'r', "BinWidth",0.05)
-    hold off
-    xlim([0,1.1])
-    set(gca, 'YDir','reverse')
-    axis off
-end
-
-%% 
-onset_across = 1;
-comp_measures = ["Perc", "Perc_vol"];
-
-for parc = ["roi_120"]%, "roi_250"] 
-    half_violin(comp_meth_with_resec, det_meths, comp_measures, "parc", parc,...
-        "onset_across", onset_across, "vis_plot", "on",...
-        "save_fig", 0)
-end
-
-%%
-resec_thresh = 0.5;
-for comp_measure = comp_measures
-    fig = figure("Position",[100,1000, 1200, 400]);
-    tiledlayout(1,length(det_meths))
-    for det_meth = det_meths
-        nexttile
-        data_tab = comp_meth_with_resec.across_sz.roi_120.(sprintf(det_meth));
-        data = data_tab.(sprintf(comp_measure));
-        out = data_tab.Outcome;
-       
-        out_str = string();
-        out_str(out<3) = "Good";
-        out_str(out>2) = "Bad";
-        resec_str = string();
-        resec_str(data>=resec_thresh) = "Yes";
-        resec_str(data<resec_thresh) = "No";
-        [contingency_tab, ~, p, lab] = crosstab(resec_str, out_str);
-        out_tab = table(resec_str', out_str');
-        out_tab.Properties.VariableNames = ["resec_thresh", "Outcome"];
-        if any(any(contingency_tab <5))
-            [~, p, ~] = fishertest(contingency_tab);
-            test_name = "Fishers exact";
-        else 
-            test_name = "Chi-square";
-        end
-        heatmap(out_tab, "resec_thresh", "Outcome")
-        colorbar off
-        title(sprintf("%s (%s p=%.2f)", det_meth, test_name, p))
-    end
-    sgtitle(sprintf("%s (thresh = %d%%)", strrep(comp_measure, "_", " "),resec_thresh*100))
-    saveas(fig, sprintf("%scontingency_%s_%d.%s", save_loc,comp_measure,resec_thresh*100,file_type))
-end
-
-% OLD CODE
-% onset_across_titles = ["subject", "onset across"];
-% det_meths = ["clo"];
-% 
-% onset_across = 1;
-% 
-% comp_measures = ["Perc", "Perc_z"];
-% 
-% for parc = ["chan", "roi_120"] 
-%     half_violin(comp_meth_with_resec, det_meths,comp_measures, "parc", parc,...
-%         "onset_across", onset_across, "vis_plot", "on",...
-%         "save_fig", 0, "save_loc", save_loc,  "file_type", file_type)
-% end
-% 
-% fig = figure();
-% tiledlayout(1,2)
-% for parc = ["chan", "roi_120"]
-%     for det_meth = det_meths
-%         nexttile
-%         data_tab = comp_meth_with_resec.across_sz.(sprintf(parc)).(sprintf(det_meth));
-%         data = data_tab.Perc;
-%         out = data_tab.Outcome;
-%        
-%         out_str = string();
-%         out_str(out<3) = "Good";
-%         out_str(out>2) = "Bad";
-%         resec_str = string();
-%         resec_str(data>=0.5) = "Yes";
-%         resec_str(data<0.5) = "No";
-%         [contingency_tab, ~, p, lab] = crosstab(resec_str, out_str);
-%         out_tab = table(resec_str', out_str');
-%         out_tab.Properties.VariableNames = ["resec_50", "Outcome"];
-%         if any(any(contingency_tab <5))
-%             [~, p, ~] = fishertest(contingency_tab);
-%             test_name = "Fishers exact";
-%         else 
-%             test_name = "Chi-square";
-%         end
-%         heatmap(out_tab, "resec_50", "Outcome")
-%         colorbar off
-%         title(sprintf("%s (%s p=%.2f)", parc, test_name, p))
-%     end
-%      sgtitle(sprintf("Comparison against resection (%s)", onset_across_titles(onset_across+1)))
-%      %saveas(fig, sprintf("figures/rapid_prototype/onset_resec/%s_contingency_%s.png", parc, onset_across_titles(onset_across+1)))
-%       
-% end
 
 %% Sub question 3: Is resecting a larger proportion of the consensus onset associated with more favourable outcomes?
 onset_across_titles = ["subject", "onset across"];
@@ -292,163 +57,7 @@ for parc = ["chan", "roi_120"]
       
 end
 
-%% Subquestion 4: Does a larger resection tend to result in more favourable outcomes?
-% Is a larger resection (i.e., more regions resected) associated with better
-% post-surgical outcomes?
-% Remove subjects with no recorded regions resected
-final_output = final_output_all(final_output_all.outcome ~= 8,:);
-final_output = final_output(cellfun(@sum, final_output.resected_chan)>0,:);
 
-save_loc = "figures/subquestions/q4/";
-file_type = "svg";
-
-vols = atlas.vol{2};
-names = atlas.name{2};
-
-% We will consider the count of regions and the total volume
-resec_count = cellfun(@sum,final_output.resected_roi_120);
-resec_vol = nan(size(final_output,1),1);
-
-for pat = 1:size(final_output)
-    pat_onset = final_output(pat,:);
-    regions = pat_onset.roi_names_120{:};
-    resec = pat_onset.resected_roi_120{:};
-    resec_regions = regions(logical(resec));
-    resec_reg_atlas = contains(names, resec_regions);
-    resec_vol(pat) = sum(vols(resec_reg_atlas));
-end
-
-fig = figure("Position",[10,10,500,900]);
-subplot(3,2,1:2)
-boxchart(double(final_output.outcome>2), resec_count, 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), resec_count, 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing resection region count across outcome groups")
-subplot(3,2,3:4)
-boxchart(double(final_output.outcome>2), log(resec_count), 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), log(resec_count), 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing log(resection size) across outcome groups")
-subplot(3,2,5)
-histogram(log(resec_count(final_output.outcome<3)))
-title("Log(resection size) (ILAE 1-2)")
-xlim([0 3])
-ylim([0 14])
-subplot(3,2,6)
-histogram(log(resec_count(final_output.outcome>2)))
-title("Log(resection size) (ILAE 3+)")
-xlim([0 3])
-ylim([0 14])
-[~,p, ~,st] = ttest(log(resec_count(final_output.outcome<3)), log(resec_count(final_output.outcome>2)));
-sgtitle(sprintf("t(%d)=%.3f, p=%.3f",st.df ,st.tstat,p))
-saveas(fig, sprintf("%s%s_comp_resec_size_count.%s", save_loc, parc, file_type))
-
-fig2 = figure("Position",[10,10,500,900]);
-subplot(2,2,1:2)
-boxchart(double(final_output.outcome>2), resec_vol, 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), resec_vol, 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing resection volume across outcome groups")
-subplot(2,2,3)
-histogram(resec_vol(final_output.outcome<3), "BinWidth",5*10^4)
-title("Resection size (ILAE 1-2)")
-ylim([0 14])
-xlim([0,3*10^5])
-subplot(2,2,4)
-histogram(resec_vol(final_output.outcome>2), "BinWidth",5*10^4)
-title("Resection size (ILAE 3+)")
-ylim([0 14])
-xlim([0,3*10^5])
-[~,p, ~,st] = ttest(resec_vol(final_output.outcome<3), resec_vol(final_output.outcome>2));
-sgtitle(sprintf("t(%d)=%.3f, p=%.3f",st.df ,st.tstat,p))
-saveas(fig2, sprintf("%s%s_comp_resec_vol.%s", save_loc, parc, file_type))
-
-
-
-%% Subquestion 5: Does a larger onset tend to result in less favourable outcomes?
-final_output = final_output_all(final_output_all.outcome ~= 8,:);
-final_output = final_output(cellfun(@sum, final_output.clo_chan)>0,:);
-
-save_loc = "figures/subquestions/q5/";
-file_type = "svg";
-
-vols = atlas.vol{2};
-names = atlas.name{2};
-
-% We will consider the count of regions and the total volume
-clo_count = cellfun(@sum,final_output.clo_roi_120);
-clo_vol = nan(size(final_output,1),1);
-
-for pat = 1:size(final_output)
-    pat_onset = final_output(pat,:);
-    regions = pat_onset.roi_names_120{:};
-    clo = pat_onset.clo_roi_120{:};
-    resec_regions = regions(logical(clo));
-    resec_reg_atlas = contains(names, resec_regions);
-    clo_vol(pat) = sum(vols(resec_reg_atlas));
-end
-
-fig = figure("Position",[10,10,500,900]);
-subplot(3,2,1:2)
-boxchart(double(final_output.outcome>2), clo_count, 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), clo_count, 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing resection region count across outcome groups")
-subplot(3,2,3:4)
-boxchart(double(final_output.outcome>2), log(clo_count), 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), log(clo_count), 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing log(CLO size) across outcome groups")
-subplot(3,2,5)
-histogram(log(clo_count(final_output.outcome<3)))
-title("Log(CLO size) (ILAE 1-2)")
-xlim([0 3])
-ylim([0 14])
-subplot(3,2,6)
-histogram(log(clo_count(final_output.outcome>2)))
-title("Log(CLO size) (ILAE 3+)")
-xlim([0 3])
-ylim([0 14])
-[~,p, ~,st] = ttest(log(clo_count(final_output.outcome<3)), log(clo_count(final_output.outcome>2)));
-sgtitle(sprintf("t(%d)=%.3f, p=%.3f",st.df ,st.tstat,p))
-saveas(fig, sprintf("%s%s_comp_clo_count.%s", save_loc, parc, file_type))
-
-fig2 = figure("Position",[10,10,500,900]);
-subplot(3,2,1:2)
-boxchart(double(final_output.outcome>2), clo_vol, 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), clo_vol, 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing resection volume across outcome groups")
-subplot(3,2,3:4)
-boxchart(double(final_output.outcome>2), log(clo_vol), 'MarkerStyle','none')
-hold on
-swarmchart(double(final_output.outcome>2), log(clo_vol), 'filled')
-hold off
-set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
-title("Comparing log(CLO volume) across outcome groups")
-subplot(3,2,5)
-histogram(log(clo_vol(final_output.outcome<3)))
-title("Log(CLO volume) (ILAE 1-2)")
-ylim([0 14])
-subplot(3,2,6)
-histogram(log(clo_vol(final_output.outcome>2)))
-title("Log(CLO volume) (ILAE 3+)")
-ylim([0 14])
-[~,p, ~,st] = ttest(log(clo_vol(final_output.outcome<3)), log(clo_vol(final_output.outcome>2)));
-sgtitle(sprintf("t(%d)=%.3f, p=%.3f",st.df ,st.tstat,p))
-saveas(fig2, sprintf("%s%s_comp_clo_vol.%s", save_loc, parc, file_type))
 
 %% Additional: Testing association between size of onset and size of resection across outcome groups
 final_output = final_output_all(cellfun(@sum, final_output_all.resected_chan)>0,:);
@@ -604,13 +213,17 @@ half_violin_upd(summary_tab,  ["med_onset_vol","max_onset_vol",...
 save('tables/subquestions/dist_vol_tab.mat', 'summary_tab')
 
 %% Subquestion 7: Is variablity in seizure onsets associated with surgical outcomes?
-final_output = final_output_all(final_output_all.outcome ~= 8,:);
+%final_output = final_output_all(final_output_all.outcome ~= 8,:);
 
-save_loc = "figures/subquestions/q7/";
+save_loc = "../figures/subquestions/onset_var/";
 file_type = "svg";
 
 subj_lvl_comp_clean = subj_lvl_comp(subj_lvl_comp.sz_count>4,:);
+subj_lvl_comp_clean.Properties.VariableNames{1} = 'Patient_id';
 
+if ~any(contains(subj_lvl_comp_clean.Properties.VariableNames, "outcome"))
+    subj_lvl_comp_clean = innerjoin(subj_lvl_comp_clean, final_output(:,[1,35]), 'Keys', 'Patient_id');
+end
 
 fig = figure();
 tiledlayout(2,2)
@@ -626,16 +239,16 @@ for comp = ["MAD", "variance"]
         col_vals = subj_lvl_comp_clean.(sprintf(column));
         summ_vals = cellfun(comp_func, col_vals);
        
-        boxchart(double(final_output.outcome(incl_subj)>2), summ_vals, "MarkerStyle", "none")
+        boxchart(double(subj_lvl_comp_clean.outcome>2), summ_vals, "MarkerStyle", "none")
         hold on
-        swarmchart(double(final_output.outcome(incl_subj)>2), summ_vals, "filled")
+        swarmchart(double(subj_lvl_comp_clean.outcome>2), summ_vals, "filled")
         hold off
         set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
         title(sprintf("%s %s", comp, strrep(column, "_", " ")))
     end
 end
 sgtitle("Seizure onset variability")
-saveas(fig, sprintf("%s_onset_var.%s", save_loc, file_type))
+%saveas(fig, sprintf("%s_onset_var.%s", save_loc, file_type))
 
 
 fig = figure();
@@ -658,16 +271,75 @@ for comp = ["MAD", "variance"]
         
         summ_vals = cellfun(comp_func, prop_vals);
        
-        boxchart(double(final_output.outcome(incl_subj)>2), summ_vals, "MarkerStyle", "none")
+        boxchart(double(subj_lvl_comp_clean.outcome>2), summ_vals, "MarkerStyle", "none")
         hold on
-        swarmchart(double(final_output.outcome(incl_subj)>2), summ_vals, "filled")
+        swarmchart(double(subj_lvl_comp_clean.outcome>2), summ_vals, "filled")
         hold off
         set(gca, "XTick", [0,1], "XTickLabel", ["ILAE 1-2", "ILAE 3+"])
         title(sprintf("%s %s", comp, strrep(column, "_", " ")))
     end
 end
 sgtitle("Seizure onset variability (values from proportions)")
-saveas(fig, sprintf("%s_onset_var(prop).%s", save_loc, file_type))
+%saveas(fig, sprintf("%s_onset_var(prop).%s", save_loc, file_type))
+
+n_perm = 5000;
+resec_thresh = 0.5;
+comp_measures = ["max_dist", "onset_vol"]
+
+%         for comp_measure = comp_measures
+%             f = figure();
+%             f.Position = [10,10,1000,500];
+%             tiledlayout(1,3)
+%             data_tab = comp_meth_with_resec.across_sz.(sprintf(chan_or_roi)).(sprintf(det_meth));
+%             expl = data_tab.(sprintf(comp_measure));
+%             out = data_tab.Outcome>2;
+%             mod = fitglm(expl, out,'Distribution','binomial','Link','logit');
+% 
+%             probs = mod.Fitted.Probability;
+%             [X,Y,T,AUC] = perfcurve(out,probs,1);
+%         
+%             perm_auc = nan(n_perm,1);
+%             for perm = 1:n_perm
+%                 rng(perm)
+%                 expl_perm = expl(randperm(length(expl)));
+%                 mod_perm = fitglm(expl_perm, out,...
+%                     'Distribution','binomial','Link','logit');
+%                 probs_perm = mod_perm.Fitted.Probability;
+%                 [~,~,~,AUC_perm] = perfcurve(out,probs_perm,1);
+%                 perm_auc(perm) = AUC_perm;
+%             end
+%         
+%             nexttile
+%             plot(X,Y)
+%             hold on
+%             plot([0,1], [0,1])
+%             hold off
+%             xlabel('False positive rate') 
+%             ylabel('True positive rate')
+%             title(sprintf('AUC = %.3f', AUC))
+%         
+%             nexttile
+%             histogram(perm_auc, 'BinWidth', 0.025)
+%             hold on
+%             xline(AUC)
+%             hold off
+%             title(sprintf("p = %.3f", mean(AUC<perm_auc)))
+% 
+%             nexttile
+%             scatter(log(probs./(1-probs)), expl)
+%             lsline()
+%             title("Linearity assumption")
+% 
+%             sgtitle(strrep(sprintf("%s %s %s", chan_or_roi, det_meth,comp_measure), "_", " "))
+%             saveas(f, sprintf("%s%s_%s_AUC.svg", save_loc))
+%   
+%         end
+% 
+% 
+
+
+
+
 
 
 %% Alternative subquestion 7: Is concordance between seizure onsets associated with outcomes
@@ -715,10 +387,26 @@ tiledlayout(2,2)
 for col_name = ["mean_concord", "med_concord"]
     nexttile
     histogram(concord_mat_tab(concord_mat_tab.Outcome<3,:).(sprintf(col_name)), "BinWidth", 0.2)
+    xlim([-0.5 1])
     title(sprintf("%s ILAE 1-2", strrep(col_name, "_", " ")))
     nexttile
     histogram(concord_mat_tab(concord_mat_tab.Outcome>2,:).(sprintf(col_name)), "BinWidth", 0.2)
+    xlim([-0.5 1])
     title(sprintf("%s ILAE 3+", strrep(col_name, "_", " ")))
 end
+
+
+%%
+median(concord_mat_tab(concord_mat_tab.Outcome<3,:).mean_concord, 'omitnan')
+median(concord_mat_tab(concord_mat_tab.Outcome>2,:).mean_concord, 'omitnan')
+
+
+median(concord_mat_tab(concord_mat_tab.Outcome<3,:).med_concord, 'omitnan')
+median(concord_mat_tab(concord_mat_tab.Outcome>2,:).med_concord, 'omitnan')
+
+
+median(concord_mat_tab(concord_mat_tab.Outcome<3,:).max_concord, 'omitnan')
+median(concord_mat_tab(concord_mat_tab.Outcome>2,:).max_concord, 'omitnan')
+
 
 

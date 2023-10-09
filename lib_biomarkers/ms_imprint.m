@@ -18,7 +18,7 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         val_tbl
         t
         opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "sec" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
-        opts.rec_thresh (1,1) double {mustBeNumeric} = 0.1
+        opts.rec_thresh (1,1) double {mustBeNumeric} = 1
         opts.ict_buffer (1,1) double {mustBeInteger, mustBePositive} = 10 %in seconds
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
         opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 %percentage of seizure to be ignored at the start for calculation of max spread
@@ -65,15 +65,15 @@ function [tbl_imprint_out,cell_imprint,cell_t,cell_madscores] = ms_imprint(meta_
         
         %pull out segment ids
         pre_ids=find(tw<=-1*ict_buffer);
-        ictal_ids=find(  tw>0 & tw<=meta_tbl.duration(s)  );
+        ictal_ids=find(tw>0 & tw<=meta_tbl.duration(s)  ); % Here I have shifted the marked onset back by 10 seconds
         
         %------------------------------------------------------------------
         %Calculate MAD score for each feature & ignores preictal spikes by
         %ignoring outliers
         disp(['Calculating feature MAD scores in ' meta_tbl.segment_id{s}])
         pre_features=features(:,pre_ids,:);
-%         pre_outl=isoutlier(pre_features,2,'ThresholdFactor',5);
-%         pre_features(pre_outl)=NaN;
+        pre_outl=isoutlier(pre_features,"median",2);%'ThresholdFactor',3);
+        pre_features(pre_outl)=NaN;
         feat_pre_m=median(pre_features,2,'omitnan');
         feat_pre_smad=mc*mad_rewrite(pre_features,1,2);
         mad_score_features = (features-feat_pre_m)./feat_pre_smad; %score ictal to median & scaled mad
