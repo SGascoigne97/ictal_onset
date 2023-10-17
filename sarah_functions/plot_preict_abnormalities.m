@@ -35,7 +35,7 @@ function plot_preict_abnormalities(data_tbl, cell_imprint, opts)
         fs = data_tbl.segment_fs(sz);
 %         subplot(1,9,1:8)
         eeg_dat = data_tbl.segment_data{sz,1};
-        pre_dat = eeg_dat(:,1:110*fs);
+        pre_dat = eeg_dat(:,1:109*fs);
 
         offset = round((max(max(pre_dat))-min(min(pre_dat)))/3);
         % Extract removed segments (this is where abnormal activity was

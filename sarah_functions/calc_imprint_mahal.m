@@ -87,7 +87,7 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
         sz_mat_tab.feat_mat{sz} = sz_mat;
     end
     [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,...
-        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, 'movmed_width', rec_thresh/2, "ict_buffer", 10);  % using the same t_wndw for all features as using same window length or overlap
+        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, 'movmed_width', 0, "ict_buffer", 10);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 

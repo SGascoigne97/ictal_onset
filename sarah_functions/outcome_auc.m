@@ -56,10 +56,10 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
     
         probs = mod.Fitted.Probability;
         [X,Y,~,AUC] = perfcurve(outcome_clean,probs,1);
-
-        if AUC <0.5
-            AUC = 1-AUC;
-        end
+% 
+%         if AUC <0.5
+%             AUC = 1-AUC;
+%         end
     
         perm_auc = nan(n_perm,1);
         for perm = 1:n_perm
@@ -69,17 +69,19 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
                 'Distribution','binomial','Link','logit');
             probs_perm = mod_perm.Fitted.Probability;
             [~,~,~,AUC_perm] = perfcurve(outcome_clean,probs_perm,1);
-            if AUC_perm <0.5
-                AUC_perm = 1-AUC_perm;
-            end
+%             if AUC_perm <0.5
+%                 AUC_perm = 1-AUC_perm;
+%             end
             perm_auc(perm) = AUC_perm;
         end
 
         % p-value is the proportion of permuted AUC values with higher
         % value than observed AUC
-        p_val = mean(AUC<perm_auc);
-        if p_val >0.5
-            p_val = 1 - p_val;
+
+        if AUC>=0.5
+            p_val = mean(AUC<perm_auc);
+        else
+            p_val = mean(AUC>perm_auc);
         end
 
         auc_tab(auc_tab.Comparison == comp,:).AUC = AUC;

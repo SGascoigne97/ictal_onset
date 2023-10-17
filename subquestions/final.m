@@ -5,10 +5,11 @@
 %% Load data and Lausanne atlases
 %final_output_struct = load('../tables/final_output.mat'); % Here any subjects without follow-up have been removed
 %final_output = final_output_struct.final_output;
-clear final_output_struct
+% clear final_output_struct
 addpath(genpath('../sarah_functions'))
 
 load('../roi_info/ATLAS.mat')
+final_output = final_output(final_output.outcome ~= 8,:);
 
 %% Set parameters for analyses
 %chan_or_roi = "roi_120"; % All analyses are based on Lausanne 120 atlas
@@ -16,7 +17,7 @@ load('../roi_info/ATLAS.mat')
                    % with 5000 permutations
     out_thresh = 2;%2; % ILAE 1-2 is considered as a 'favourable' outcome whilst 
                     % ILAE 3+ is considered as an 'unfavourable' outcome
-    consensus_thresh = 1/3; % Set threshold for inclusion of regions in 
+    consensus_thresh = 0.5; % Set threshold for inclusion of regions in 
                             % consensus onset, here we will include regions 
                             % present in at least half of the subject's seizures
     most_resec_thresh = 0.5; % Set threshold above which subjects are considered 
@@ -34,7 +35,7 @@ load('../roi_info/ATLAS.mat')
     file_type = "svg"; % Figures will be saved as svgs so they can be pulled 
                        % into illustrator for paper figures
     
-for parc = "roi_120" %["chan", "roi_120", "roi_250"]
+for parc = ["chan", "roi_250", "roi_120"]
     [chan_or_roi, n_perm, out_thresh, consensus_thresh, most_resec_thresh,...
         det_meths, save_fig, save_folder, file_type, out_grps] =...
         argument_validation(final_output, parc, n_perm, out_thresh, consensus_thresh,...
