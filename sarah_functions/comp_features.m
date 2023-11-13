@@ -64,10 +64,18 @@ function [val_tbl, t] = comp_features(data_tbl, opts)
     % Extract time windows
     t = calcs_ll.t_wndw;
     
-    %% calculate markers
+    %% Create val_tbl then log transform all markers
     val_tbl=[calcs_ll.LL_ms calcs_energy.energy_ms];
     for band = 1:size(bands,1)
         val_tbl = [val_tbl, calcs_bp{band}.bp];
     end
+
+    for sz = 1:size(val_tbl,1)
+        for feat = 1:size(val_tbl,2)
+            val_mat = val_tbl(sz,feat);
+            val_tbl(sz,feat) = {log(val_mat{:}+1)};
+        end
+    end
+    val_tbl
 
 end

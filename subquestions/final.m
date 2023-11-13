@@ -8,6 +8,8 @@
 % clear final_output_struct
 addpath(genpath('../sarah_functions'))
 
+load("final_output.mat")
+
 load('../roi_info/ATLAS.mat')
 final_output = final_output(final_output.outcome ~= 8,:);
 

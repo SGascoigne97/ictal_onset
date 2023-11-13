@@ -3,7 +3,6 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
 
 % input:
 %   - data_tbl: full data table
-%   - metadata_tbl: full metadata table
 %   - optional inputs
 %       - window_size: window size for which imprint will be computed
 %       - min_sz_count: minimum number of seizures to have been recorded per patient
@@ -12,8 +11,9 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
 % output
 %   - data_tbl: full data table (seizures with no imprint have been
 %   removed)
-%   - metadata_tbl:
-%   - cell_imprint
+%   - cell_imprint: table including segment_id, imprint (channels x timepoints)
+%                   MAD scores, preictal MAD scores, preictal Mahalanobis
+%                   distances
 %   - sz_count_pat: count of focal seizures for all patients meeting
 %   inclusion criteria for the minimum number of seizures recorded
 
@@ -23,10 +23,9 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
         opts.min_sz_count (1,1) double {mustBeNumeric} = 5; % Same criteria as earlier but some patients will have fewer seizures following seizures with nio activity in imprint
         opts.folder = 'onset_calcs'; % folder to store markers in
         opts.window_overlap (1,1) double {mustBeNumeric} = 0;
-        %opts.rec_type (1,1) {mustBeMember(opts.rec_type, ["sec", "prop"])} = "prop" % do we require a consistent window across seizures (sec) or a threshold that varies with seizure durations (prop)
         opts.rec_thresh (1,1) double = 0.1 % Proportion of seizure used to determine location of activity in imprint
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
-        opts.movmed_width (1,1) double {mustBeNumeric, mustBePositive} = 36
+        opts.ict_buffer (1,1) double {mustBeNumeric} = 10 % Number of seconds to shift back clinically labelled onset time to ensure 'true' onset is captured
     end
     
     %fill in optional arguments
@@ -34,10 +33,9 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
     min_sz_count = opts.min_sz_count;
     folder = opts.folder;
     window_overlap = opts.window_overlap;
-    %rec_type = opts.rec_type;
     rec_thresh = opts.rec_thresh;
     mad_thresh = opts.mad_thresh;
-    movmed_width = opts.movmed_width;
+    ict_buffer = opts.ict_buffer;
     
     % Set basefolder to store markers
     patient = data_tbl.patient_id{1};
@@ -87,14 +85,14 @@ function [data_tbl, cell_imprint,  sz_count_pat] = ...
         sz_mat_tab.feat_mat{sz} = sz_mat;
     end
     [imprint_out,cell_imprint,~,cell_madscores,cell_pre_features_mad, cell_pre_mahal_mat] = mahal_imprint(data_tbl,sz_mat_tab,...
-        calcs_ll.t_wndw, "rec_thresh",rec_thresh, 'mad_thresh', mad_thresh, 'movmed_width', 0, "ict_buffer", 10);  % using the same t_wndw for all features as using same window length or overlap
+        calcs_ll.t_wndw, "rec_thresh", rec_thresh, 'mad_thresh', mad_thresh, "ict_buffer", ict_buffer);  % using the same t_wndw for all features as using same window length or overlap
     
     % Only keep seizures with seizure activity detected (activity in at least
     % one channel in imprint) 
 %     incl_sz = data_tbl.segment_id;
     rm_sz_no_onset = false(size(imprint_out.num_chan_imprint==0)); % hack
     
-    rm_sz_mad =  cellfun(@max, cellfun(@max,cell_madscores.("mahal_MAD_movsum"),'UniformOutput',false)) < 5;
+    rm_sz_mad =  cellfun(@max, cellfun(@max,cell_madscores.mahal_MAD,'UniformOutput',false)) < 5;
     rm_sz = (rm_sz_no_onset + rm_sz_mad) > 0;
 
     %% Uncomment this section if we choose to remove seizures with low maximum MAD

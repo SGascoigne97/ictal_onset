@@ -89,7 +89,8 @@ for pat = 1:size(onset_tab,1)
     % Compute consensus onset (if onset_across == 1)
     if onset_across == 1 % compute one onset across all seizures
         if det_meth ~= "clo"
-            onset_acr = mean(onset,2) >= consensus_thresh;
+            onset_acr = mean(onset(:,sum(onset,1)>0),2)>=consensus_thresh;
+            %onset_acr = mean(onset,2) >= consensus_thresh;
         else
             onset_acr = onset;
         end
