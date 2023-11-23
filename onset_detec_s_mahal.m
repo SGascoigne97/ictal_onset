@@ -37,6 +37,7 @@ onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
 % Need a new folder if using a different subset of the data/different data
 % as it will load previous save if folder is not empty
 
+clear cat
 
 %% For each patient, compute onset based on imprint, EI, and PLHG
 for pat = 1:length(patients)
@@ -155,24 +156,25 @@ for pat = 1:length(patients)
 %             set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
 %             xline(960)
 %             title(sprintf("Imprint (MAD thresh = %.1f)", mad_thresh))
-% % %             subplot(514)
-% % %             plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_movsum,2)),...
-% % %                 [pre_mahal_mad_mat(chan,:), mahal_mad_movsum(chan,:)])
-% % %             xlim([480, x_max])
-% % %             set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-% % %             xline(960)
-% % %             yline(mad_thresh)
-% % %             title(sprintf("MAD moving median (%.2f seconds forwards and back)", mov_med_val/8))
-% % %             subplot(515)
-% % %             plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
-% % %                 [zeros(1, size(pre_mahal_mad_mat,2)), imprint(chan,:)])
-% % %             ylim([-0.5,1.5])
-% % %             xlim([480, x_max])
-% % %             set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
-% % %             xline(960)
-% % %             title(sprintf("Imprint using moving median (MAD thresh = %.1f)", mad_thresh))
+% %             subplot(514)
+% %             plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_movsum,2)),...
+% %                 [pre_mahal_mad_mat(chan,:), mahal_mad_movsum(chan,:)])
+% %             xlim([480, x_max])
+% %             set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+% %             xline(960)
+% %             yline(mad_thresh)
+% %             title(sprintf("MAD moving median (%.2f seconds forwards and back)", mov_med_val/8))
+% %             subplot(515)
+% %             plot(1:(size(pre_mahal_mad_mat,2) + size(mahal_mad_mat,2)),...
+% %                 [zeros(1, size(pre_mahal_mad_mat,2)), imprint(chan,:)])
+% %             ylim([-0.5,1.5])
+% %             xlim([480, x_max])
+% %             set(gca, "XTick", 480:80:x_max, "XTickLabel", -60+(0:10:length(480:80:x_max)*10))
+% %             xline(960)
+% %             title(sprintf("Imprint using moving median (MAD thresh = %.1f)", mad_thresh))
 % %             saveas(fig, sprintf("figures/checking_imprint/%s/mahal_distance_2/%d_%s.png", ...
 % %                     patient, s, string(pat_data.segment_channel_labels{1,1}(chan))))
+% %             clear all
 %         end
 %     end
 

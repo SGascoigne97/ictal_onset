@@ -1,3 +1,10 @@
 *.asv
 figures/
 onset_calcs/
+Nathan Code/
+extra_files/
+example_onset_detection/
+MAD_scan_tabs/
+imprint_ons/
+tables/
+tables_IOLA/

@@ -44,7 +44,7 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
     if plot_fig == 1
         f = figure();
         f.Position = [10,10,1000,1500];
-        tiledlayout(length(comp_measures),3)
+        tiledlayout(length(comp_measures),2)
     end
 
     for comp = comp_measures
@@ -56,10 +56,10 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
     
         probs = mod.Fitted.Probability;
         [X,Y,~,AUC] = perfcurve(outcome_clean,probs,1);
-% 
-%         if AUC <0.5
-%             AUC = 1-AUC;
-%         end
+
+        if AUC <0.5
+            AUC = 1-AUC;
+        end
     
         perm_auc = nan(n_perm,1);
         for perm = 1:n_perm
@@ -69,9 +69,9 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
                 'Distribution','binomial','Link','logit');
             probs_perm = mod_perm.Fitted.Probability;
             [~,~,~,AUC_perm] = perfcurve(outcome_clean,probs_perm,1);
-%             if AUC_perm <0.5
-%                 AUC_perm = 1-AUC_perm;
-%             end
+            if AUC_perm <0.5
+                AUC_perm = 1-AUC_perm;
+            end
             perm_auc(perm) = AUC_perm;
         end
 
@@ -104,13 +104,13 @@ function [auc_tab] = outcome_auc(data_tbl, comp_measures, outcome, opts)
             hold off
             title(sprintf("p = %.3f", p_val))
 
-            nexttile
-            P = mod.Fitted.Probability;
-            scatter(expl, log(P./(1-P)), "filled", "XJitter","rand", "YJitter", "rand", "XJitterWidth", range(expl)/25, "YJitterWidth", range(log(P./(1-P)))/25)
-            lsline()
-            xlabel(comp)
-            ylabel("Log(P/1-P)")
-            title("Linearity assumption")
+%             nexttile
+%             P = mod.Fitted.Probability;
+%             scatter(expl, log(P./(1-P)), "filled", "XJitter","rand", "YJitter", "rand", "XJitterWidth", range(expl)/25, "YJitterWidth", range(log(P./(1-P)))/25)
+%             lsline()
+%             xlabel(comp)
+%             ylabel("Log(P/1-P)")
+%             title("Linearity assumption")
         end
     end
 

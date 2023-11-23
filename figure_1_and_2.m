@@ -24,18 +24,21 @@ pat_id = string(pat_onset.Patient_id);
 atlas = 2; %1=scale36,2=60,3=125,4=250
 % Choose atlas
 % Choose threshold for allowing propagated activity (seconds)
-det = 8;
 min_sz = 1;
 min_sz_dur = 9; % minimum seizure duration for inclusion
 chan_to_roi_thresh_type = "count";
 chan_to_roi_thresh = 1; % One channel in region is sufficient to include region
-window_size = 1;
+window_size = 1; % size of sliding window (in seconds)
 window_overlap = 7/8; % Overlap between imprint windows
-rec_type = "sec";
-rec_thresh = 9;
-mad_thresh = 2.5;
+det = 7; % count of windows beyond first detected onset which will also be considered as onset
+rec_type = "sec"; % type of threshold used to validate activity is ictal activity (minimum duration) - can use "sec" or "prop"
+rec_thresh = 9; % number of seconds for which activity must persist to be labelled as ictal
+mad_thresh = 3;
+ict_buffer = 10;
 
-onset_calc_loc = "imprint_ons";
+onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
+% Need a new folder if using a different subset of the data/different data
+% as it will load previous save if folder is not empty
 
 % We will show a subsection of EEG channels (25) for clearer visualisations
 % We must include any onset channels so imprint onset across seizures has
@@ -167,12 +170,12 @@ saveas(f,sprintf("figures/paper_figures/Figure 1/%s_all_chan_onsets.svg", string
 
 %% Panel D: ROI-120 imprint onset (regions included in channels from Panels A-C)
 f = figure();
-onsets = final_output(pat,:).imprint_roi_120{:}(unq_roi(1:10),:);
+onsets = final_output(pat,:).imprint_roi_120{:}(unq_roi,:);
 subplot(1,5,1:4)
 heatmap(onsets, 'CellLabelColor','none')
 colorbar off
 subplot(1,5,5)
-heatmap(double(mean(final_output(pat,:).imprint_roi_120{:}(unq_roi(1:10),:),2)>=0.5), 'CellLabelColor','none')
+heatmap(double(mean(final_output(pat,:).imprint_roi_120{:}(unq_roi,:),2)>=0.5), 'CellLabelColor','none')
 colormap([0.8,0.8,0.8;1,0.5,0.5])
 colorbar off
 saveas(f,sprintf("figures/paper_figures/Figure 1/%s_all_roi_onsets.svg", string(pat_onset.Patient_id)))

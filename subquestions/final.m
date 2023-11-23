@@ -123,6 +123,3 @@ metadata
 % Here we will display how the MAD threshold for identifying abnormal iEEG
 % activity was tuned for use in IOLA
 %../scan_mad_thresh
-
-%% S4.X  Concordance between seizure onsets is not associated with surgical outcomes
-
