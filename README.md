@@ -3,7 +3,34 @@ Gascoigne et al. (brief communication, submitted January 2024).
 The code in this repository can be used to automatically detect onsets using the imprint and Epileptigenicity Index (Bartolomei et al., 2008) algortihms
 
 ### Data formatting 
-For each subject, icEEG data and accompanying metadata are required. See *data* folder to see example data from SWEZ dataset (link) formatted in the appropriate way for this analysis (*STILL NEED TO ADD THIS*)
+For each subject, icEEG data and accompanying metadata are required. The table should have one row per seizure and include the following columns:
+  - *segment_id*: Unique identifier for the seizure
+  - *patient_id*: Subject identification number
+  - *duration*: Duration of seizure in seconds
+  - *onset_channels*: Binary array identifying clinically labelled onset channels (binary identifier with length n_chan)
+  - *resected_5mm*: Binary array identifying if the resection was within 5mm of the channel, therefore including the channel in the resected area (binary identifier with length n_chan)
+  - *segment_pre*: Number of seconds at the start of the recording that is considered pre-ictal (i.e., before the clinically labelled seizure onset time).
+  - *segment_post*: Number of seconds at the end of the recording that is considered post-ictal (i.e., after the clinically labelled seizure offset time).
+  - *segment_fs*: Sampling frequency of recording in Hertz (in this work, all seizures were sampled at 512Hz).
+  - *segment_channel_labels*: Channel names for each channel in the recording (this is used to localise channels to regions of interest (ROIs). An additional table per subject contains the mapping information form channels to ROIs. 
+  - *segment_data*: icEEG time series (matrix with dimension #channels x #secondsrecorded*sampling frequency).
+
+  The following columns are required for metadata comparisons:
+  - *ilae_sz_type*: Seizure type as reported by clinicians based on visual inspection of seizure or video recording of seizure.
+  - *loss_of_awareness*: Binary identifier showing which seizures led to a loss of awareness as tested by interactions with the subject during the seizure. NaN if interaction was not possible. 
+  - *baseline_awake*: Binary identifier showing if the subject was awake (1) or asleep (0) at seizure onset. NaN if this was unclear or subject was obscured in footage). 
+  - *op_type*: Operation type received by the subject (e.g., TLx is a temporal lesionectomy). This is used to split subjects into epilepsy types in metadata analyses. 
+
+Additional information that could be used in future analysis:
+  - *start*: Start time of seizure (date-time object)
+  - *ilae*: surgical outcome based on ILAE score for each year reported in *ilae_year*. This is used to extract the year one outcome for the individual. 
+  - *ilae_year*: year of outcome report which is used together with start times (from which the year of surgery can be extracted) to extract the year one outcome. 
+  - *resected_3mm*: Binary array identifying if the resection was within 3mm of the channel, therefore including the channel in the resected area (binary identifier with length n_chan) - This study used the 5mm alternative of this, but swithching to 3mm is possible with a simple adjustment on line 199 of **onset_detec_s_mahal.m** (replace *resected_5mm{1}* with *resected_3mm{1}*).
+
+  
+
+
+ 
 
 ### Onset localisation and channel to ROI conversion
 The **onset_detec_s_mahal.m** code creates a table (*subquestions/final_output.mat*) presenting all data required for downstream analyses:
