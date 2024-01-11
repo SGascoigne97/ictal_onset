@@ -4,11 +4,11 @@ data_location = '/media/b5007876/DATA/Data/UCLH_export/imprintDataExportFinal/';
 path_pipeline_exports = [data_location, 'export_ictal'];
 
 % Add paths to all functions required
-addpath(genpath('help_functions'))
-addpath('lib_biomarkers')
-addpath('lib_dataflow')
-addpath('sarah_functions')
-addpath(genpath('/home/campus.ncl.ac.uk/b5007876/Desktop/Database Code/ieeg-norm-map-pipeline/lib/'))
+addpath(genpath('../Ictal_onset/help_functions'))
+addpath('../Ictal_onset/lib_biomarkers')
+addpath('../Ictal_onset/lib_dataflow')
+addpath('../Ictal_onset/sarah_functions')
+addpath(genpath('../Ictal_onset/lib/'))
 
 %%
 % List patients with pre-processed data
@@ -33,20 +33,20 @@ mad_thresh = 3;
 prop_rec = 0.8;
 ict_buffer = 10;
 
-onset_calc_loc = "imprint_ons"; % Specify folder to store imprint values in
+%% 
+onset_calc_loc = "imprint_ons/"; % Specify folder to store imprint values in
 % Need a new folder if using a different subset of the data/different data
 % as it will load previous save if folder is not empty
-
-clear cat
 
 %% For each patient, compute onset based on imprint, EI, and PLHG
 for pat = 1:length(patients)
     patient = patients{pat};
+    fprintf("\n Subject %s", patient)
 
     if exist(sprintf('%s%s.mat', data_location, patient), 'file')
         load(sprintf('%s%s.mat', data_location, patient));
     else
-        fprintf('Patient %s does not have saved data \n', patient)
+        fprintf('\n Subject %s does not have saved data', patient)
         continue 
     end
     pat_data = data_export;
@@ -63,7 +63,7 @@ for pat = 1:length(patients)
         'sz_type', ["focal", "sg", "subclin", "N"], 'min_sz_duration', min_sz_dur);
     % Append patient data to data table (if inclusion criteria are met)
     if size(pat_data,1) < min_sz
-        fprintf('Patient %s does not meet inclusion criteria \n', patient)
+        fprintf('\n Subject %s does not meet inclusion criteria', patient)
         continue
     end
     pat_meta = pat_data(:,1:(end-1));
@@ -82,13 +82,13 @@ for pat = 1:length(patients)
             "min_sz_count", min_sz, "folder", onset_calc_loc, "mad_thresh", mad_thresh,...
             "rec_thresh", rec_thresh, "window_overlap", window_overlap);
     else 
-        fprintf("Patient %s does not meet inclusion criteria \n", patient)
+        fprintf("\n Subject %s does not meet inclusion criteria", patient)
         continue
     end
 
     sz_count = size(pat_data,1);
     if sz_count < min_sz
-        fprintf("Patient %s does not meet inclusion criteria \n", patient)
+        fprintf("\n Subject %s does not meet inclusion criteria", patient)
         continue
     end
 
@@ -97,8 +97,7 @@ for pat = 1:length(patients)
     json_data = json_data(contains(string(extractfield(cat(2,json_data.x_id),...
         'x_oid')), string(pat_data.segment_id)));
 
-% %%
-%     % Save figures (activity detected and preictal noise)
+%     % Uncomment this to save figures (activity detected and preictal noise)
 %     for s = 1:size(pat_data,1)
 %         % EEGs with imprint and onset highlighted
 %         plot_eeg_imprints(pat_data(s,:), cell_imprint(s,:), "save_fig",0,...
@@ -174,7 +173,8 @@ for pat = 1:length(patients)
 % %             title(sprintf("Imprint using moving median (MAD thresh = %.1f)", mad_thresh))
 % %             saveas(fig, sprintf("figures/checking_imprint/%s/mahal_distance_2/%d_%s.png", ...
 % %                     patient, s, string(pat_data.segment_channel_labels{1,1}(chan))))
-% %             clear all
+% %             clear all % This is required so the machine wipes all
+%               figures (which should prevent the machine from crashing)
 %         end
 %     end
 
@@ -188,7 +188,7 @@ for pat = 1:length(patients)
 
     %% convert channel data to ROI with mapping
     if all(cellfun(@isempty, json_data(1).channel_details.ROIname) == 1)
-        fprintf("Patient %s does not have ROI information", patient)
+        fprintf("\n Subject %s does not have ROI information", patient)
         continue
     end
     
@@ -207,13 +207,13 @@ for pat = 1:length(patients)
         "channel_names","clo_chan","resected_chan","imprint_chan","EI_chan",...
         "PLHG_chan","when_onset"];
    laus = [72, 120, 250];
-    for atl = atlases
+   for atl = atlases
         % Remove roi columns from auto_det_onset so they can be recreated using the next atlas
         roi_cols = contains(auto_det_onset.Properties.VariableNames,"_roi");
         auto_det_onset(:, roi_cols) = [];
         % Create channels to regions matrix
         [ch2roi_map_mat,ch_names,roi_names, ch_det_used]=map_to_roi(json_data,pat_data,atl);
-
+    
         for method = ["imprint", "EI", "PLHG"]
             onset_mat = auto_det_onset(:,sprintf("%s_chan", method));
             onset_mat = onset_mat{1,1}{:};
@@ -242,10 +242,10 @@ for pat = 1:length(patients)
             auto_det_onset.Properties.VariableNames(roi_cols), 'clo_roi',...
             'resected_roi'];
         roi_atl_tbl.Properties.VariableNames = append(col_names, sprintf("_%d", laus(atl)));
-
-        onset_output = [onset_output, roi_atl_tbl];
     
-    end
+        onset_output = [onset_output, roi_atl_tbl];
+
+   end
     
     %% attach meta data
     onset_output = add_meta(onset_output, json_data);
@@ -286,4 +286,3 @@ save('subquestions/final_output.mat',"final_output")
 %     end
 % end
 % final_output_clean = final_output(find(~rm_pat),:);
-
