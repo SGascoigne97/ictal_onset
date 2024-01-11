@@ -28,7 +28,7 @@ In the main analysis, we looked at onsets based on the Lausanne-120 parcellation
 
 #### Saving figures
 The code saves figures for each step of the analysis, the user can determine if they want the figures to be saved (save_fig = 1) or not (save_fig = 0) on line 37. 
-The location where the figures are stored can be changed, as this code produces the visualisations used in *Figure Three*, we have set the save location accordingly (Line 34: *save_folder = '../figures/paper_figures/Figure 3/'*).
+The location where the figures are stored can be changed, as this code produces the visualisations used in *Figure Two*, we have set the save location accordingly (Line 34: *save_folder = '../figures/paper_figures/Figure 3/'*).
 Additionally, it is possible to change the filetype used for each of the figures (Line 37: *file_type = "svg";*), see MATLAB documentation to see the filetypes available). 
 
 #### Step-by-step downstream analysis
@@ -45,4 +45,4 @@ Here we will compute the size of resections using both count of regions and volu
 
 #### Figures
 *Figure One* Panels B-F display the process from icEEG to automatically detected (consensus) onset using Lausanne-120 parcellation scheme. Panel G shows the clinically labelled onset, also using the Lausanne-120 parcellation scheme. Panels B-G can be reproduced by running **figure_1.m**
-*Figure Three* is based on the figures generated when running **subquestions/final.m**
+*Figure Two* is based on the figures generated when running **subquestions/final.m**
