@@ -32,16 +32,16 @@ for var = cont_vars
 end
 %%
 for var = cat_vars
-    cat = categorical(final_output.(sprintf(var)));
+    cate = categorical(final_output.(sprintf(var)));
     cat_f = categorical(final_output(final_output.outcome <3,:).(sprintf(var)));
     cat_u = categorical(final_output(final_output.outcome >2,:).(sprintf(var)));
-    cats = categories(cat);
-    cat_var_tab = table(cats, countcats(cat),...
+    cats = categories(cate);
+    cat_var_tab = table(cats, countcats(cate),...
         nan(length(cats),1), nan(length(cats),1),...
         'VariableNames', ["Group", "All",out_grps]);
 
     for cat_ind = 1:length(cats)
-        cat_a_ind = cat(cat == cats{cat_ind});
+        cat_a_ind = cate(cate == cats{cat_ind});
         cat_f_ind = cat_f(cat_f == cats{cat_ind});
         cat_u_ind = cat_u(cat_u == cats{cat_ind});
         cat_var_tab(cat_ind,2:4) = table(length(cat_a_ind),...
