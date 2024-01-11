@@ -9,9 +9,14 @@ For each subject, icEEG data and accompanying metadata are required. See *data* 
 The **onset_detec_s_mahal.m** code creates a table (*subquestions/final_output.mat*) presenting all data required for downstream analyses:
   - Subject ID
   - Seizure IDs
+  - Channel labels
+  - Resection localisation (channel-wise, Lausanne-120, Lausanne-250)
   - Clinically labelled onset (channel-wise, Lausanne-120, Lausanne-250)
   - Automatically labelled onsets for each seizure (channel-wise, Lausanne-120, Lausanne-250) for each onset localisation algorithm
   - One ALO created across seizure onsets (regions included in >=50% of onsets) (channel-wise, Lausanne-120, Lausanne-250) for each onset localisation algorithm
+  - ROI names (Lausanne-120, Lausanne-250) for visualisations
+  - Channels to ROI conversion matrices (Lausanne-120, Lausanne-250)
+  - Subject metadata (surgery outcome, surgery year, outcome year, operation type, seizure duration, seizure type, sex, age at epilepsy onset, outcome at year one (as is used as the outcome identifier in this work)). 
 
 ### Downstream analysis
 All scripts for performing downstream analysis are included in the **subquestions** folder. Within this folder **final.m** calls all other scripts and will produce tables and figures which were used in this paper.
