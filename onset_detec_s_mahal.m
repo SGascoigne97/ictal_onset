@@ -273,16 +273,10 @@ for pat = 1:length(patients)
 
 end
 %%
+% Relabel  subject IDs to anonymise
+final_output_original = final_output;
+subj_relab = strcat("U",string(randperm(size(final_output,1))))';
+final_output.Patient_id = subj_relab;
+final_output_original.relabelled_pat_id = subj_relab;
 save('subquestions/final_output.mat',"final_output")
-
-% save('tables/final_output.mat',"final_output")
-
-% % Remove patients with onsets across all regions in most seizures
-% rm_pat = zeros(size(final_output, 1),1);
-% for pat = 1:size(final_output,1)
-%     ons_all_region = nansum(final_output.imprint_roi_250{pat,1})/size(final_output.imprint_roi_250{pat,1},1) == 1;
-%     if sum(ons_all_region)/length(ons_all_region) >= 0.5
-%         rm_pat(pat) = 1;
-%     end
-% end
-% final_output_clean = final_output(find(~rm_pat),:);
+save('subquestions/final_output_not_anon.mat',"final_output_original")
