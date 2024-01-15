@@ -22,7 +22,15 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
         opts.rec_thresh (1,1) double {mustBeNumeric} = 9
         opts.ict_buffer (1,1) double {mustBeInteger, mustBePositive} = 10 %in seconds
         opts.mad_thresh (1,1) double {mustBeNumeric, mustBePositive} = 5
+<<<<<<< Updated upstream
         opts.prop_rec (1,1) double {mustBeNumeric, mustBePositive} = 0.7 %
+=======
+        opts.hsc       (1,1) double {mustBeNumeric, mustBePositive} = 0.1 % percentage of seizure to be ignored at the start for calculation of max spread
+        opts.mov_med_val (1,1) double = 36 % how many steps in each direction should we take when smoothing MAD time series 
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     end
     
     %fill in optional arguments
@@ -30,7 +38,15 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
     rec_thresh=opts.rec_thresh;    
     mad_thresh=opts.mad_thresh;
     ict_buffer=opts.ict_buffer;
+<<<<<<< Updated upstream
     prop_rec = opts.prop_rec;
+=======
+    hsc=opts.hsc;
+    mov_med_val = opts.mov_med_val;
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     
     mc=-1/(sqrt(2)*erfcinv(3/2)); % fixed factor for MAD score calculation
     %% fill in some info from data_tbl
@@ -45,6 +61,8 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
     end
     
     nsegs = size(data_tbl,1);
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
     nmaxchr = zeros(nsegs,1);
     tmaxchr = zeros(nsegs,1);
     cell_infos = cell(nsegs,1);
@@ -53,6 +71,18 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
     cell_madscores = table(cell(nsegs,1), cell(nsegs,1),...
         cell(nsegs,1), cell(nsegs,1), 'VariableNames', ["mahal_MAD",...
         "Forward sum", "Backward sum", "Middle sum"]);
+=======
+=======
+>>>>>>> Stashed changes
+    %nmaxchr = zeros(nsegs,1); % Commented out for now as this is not used in the function
+    %tmaxchr = zeros(nsegs,1); % Commented out for now as this is not used in the function
+    cell_madscores = table(cell(nsegs,1), cell(nsegs,1), cell(nsegs,1),...
+        cell(nsegs,1), cell(nsegs,1), 'VariableNames', ["mahal_MAD",...
+        "mahal_MAD_movsum", "Forward sum", "Backward sum", "Middle sum"]);
+<<<<<<< Updated upstream
+>>>>>>> Stashed changes
+=======
+>>>>>>> Stashed changes
     cell_pre_mahal_mat = cell(nsegs,1);
     cell_t = cell(nsegs,1);
     cell_pre_features_mad = cell(nsegs,1);
@@ -193,12 +223,25 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
         
         %% Add inclusion criteria
         wl=(tw(2)-tw(1));
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
         recruitment_threshold = rec_thresh/wl;
        
         ms_a=movsum(mahal_mad_mat>=mad_thresh,[0 recruitment_threshold-1],2);% forward looking sum
         ms_b=movsum(mahal_mad_mat>=mad_thresh,[recruitment_threshold-1 0],2);% backward looking sum
         ms_c=movsum(mahal_mad_mat>=mad_thresh,[(recruitment_threshold/2)-1 (recruitment_threshold/2)],2); % sum across centre
         imprint = ms_a >= recruitment_threshold*prop_rec | ms_b >= recruitment_threshold*prop_rec | ms_c >= recruitment_threshold*prop_rec ;%combining the backward and forward looking sum has the advantage of not cutting off early activity, or neglecting late activity
+=======
+=======
+>>>>>>> Stashed changes
+        movmed_mahal_mad_mat = movmedian(mahal_mad_mat, [mov_med_val,mov_med_val], 2);
+        recruitment_threshold = rec_thresh/wl;
+       
+        ms_a=movsum(movmed_mahal_mad_mat>=mad_thresh,[0 recruitment_threshold-1],2);%forward looking sum
+        ms_b=movsum(movmed_mahal_mad_mat>=mad_thresh,[recruitment_threshold-1 0],2);%backward looking sum
+        ms_c=movsum(movmed_mahal_mad_mat>=mad_thresh,[(recruitment_threshold/2)-1 (recruitment_threshold/2)],2); % sum across centre
+        imprint = ms_a >= recruitment_threshold*0.8 | ms_b >= recruitment_threshold*0.8 | ms_c >= recruitment_threshold*0.8 ;%combining the backward and forward looking sum has the advantage of not cutting off early activity, or neglecting late activity
+>>>>>>> Stashed changes
         
         nchr=sum(sum(imprint,2)>=1);%get number of channels ever in imprint
         onset_time = find(sum(imprint),1, 'first');
@@ -215,9 +258,17 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
 
         % write output
         cell_imprint(s,:) = table(data_tbl.segment_id(s), {imprint});
+<<<<<<< Updated upstream
+<<<<<<< Updated upstream
         cell_infos{s}={pre_mahal_mat,mahal_mad_mat,ms_a,ms_b,ms_c};
         % cell_pre_features_mad{s} = feat_pre_smad;
         cell_madscores(s,:) = table({mahal_mad_mat},...
+=======
+        cell_madscores(s,:) = table({mahal_mad_mat}, {movmed_mahal_mad_mat},...
+>>>>>>> Stashed changes
+=======
+        cell_madscores(s,:) = table({mahal_mad_mat}, {movmed_mahal_mad_mat},...
+>>>>>>> Stashed changes
             {ms_a}, {ms_b}, {ms_c});
         cell_pre_mahal_mat{s} = pre_mahal_mat;
         cell_pre_features_mad{s} = pre_mahal_mad_mat;

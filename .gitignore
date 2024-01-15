@@ -1,4 +1,5 @@
 *.asv
+data/
 figures/
 onset_calcs/
 Nathan Code/
