@@ -11,7 +11,7 @@ data_location = 'data/';
 addpath(genpath('help_functions'))
 addpath('lib_biomarkers')
 addpath('lib_dataflow')
-addpath('sarah_functions')
+addpath('functions')
 addpath(genpath('lib/'))
 
 %%
