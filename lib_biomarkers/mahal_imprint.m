@@ -109,7 +109,7 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
             % end
         end
         
-        %% MAD score ictal Mahalanobis distances against preictal Mahalanobis distances
+          %% MAD score ictal Mahalanobis distances against preictal Mahalanobis distances
         ict_mahal_mat = nan(size(ict_vals,1), size(ict_vals(1,:,1),2));
         pre_mahal_mad_mat = nan(size(pre_vals,1), size(pre_vals(1,:,1),2));
         mahal_mad_mat = nan(size(ict_vals,1), size(ict_vals(1,:,1),2));
@@ -123,10 +123,9 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
             pre_mahal_mad_chan = (pre_dist-pre_med)./pre_smad;
             % Remove any preictal windows with MAD >= MAD threshold
             % (essentially removing preictal noise)
-            pre_mahal_mad_chan(pre_mahal_mad_chan >= mad_thresh) = NaN;
-            
             ref_vals = squeeze(pre_vals(chan,:,:));
             ref_vals(pre_mahal_mad_chan >= mad_thresh,:) = [];
+            pre_mahal_mad_chan(pre_mahal_mad_chan >= mad_thresh) = NaN;
 
             pre_mahal_mad_mat(chan,:) = pre_mahal_mad_chan;%score preictal to median & scaled mad
             % Remove preictal outliers from pre_dist before computing MAD
@@ -135,7 +134,8 @@ mahal_imprint(data_tbl,sz_mat_tab,t,opts)
             pre_med = median(pre_dist, 1, 'omitnan');
             pre_smad=mc*mad_rewrite(pre_dist',1,2);
             % store updated pre_mahal_mat for export 
-            pre_mahal_mat(chan,:) = pre_dist;
+            pre_mahal_mat(chan,~isnan(pre_mahal_mad_chan)) = pre_dist;
+            pre_mahal_mat(chan,isnan(pre_mahal_mad_chan)) = NaN;
             % Compute ictal MAD values (ictal values MAD scored against
             % preictal distribution)
             ict_mahal_mat(chan, :) = mahal(squeeze(ict_vals(chan,:,:)), ref_vals);
