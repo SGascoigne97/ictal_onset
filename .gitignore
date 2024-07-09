@@ -1,0 +1,20 @@
+*.asv
+data/
+figures/
+onset_calcs/
+Nathan Code/
+extra_files/
+example_onset_detection/
+MAD_scan_tabs/
+imprint_ons/
+tables/
+tables_IOLA/
+202302_ictal.json
+figure_1.m
+figure_1 (copy).m
+gmb_JSON_2_MAT.py
+.idea/
+.Rhistory
+json_data/
+roi_info/retains.mat
+
